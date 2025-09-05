@@ -1,26 +1,27 @@
 import { useAtivos } from '@/hooks/useAtivos';
+import { buttonStyles, screenSpecificStyles, sharedStyles } from '@/styles/sharedStyles';
 import { Ativo, CreateAtivoInput } from '@/types/ativo';
 import React, { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
-  ActivityIndicator,
-  Avatar,
-  Button,
-  Card,
-  Chip,
-  Divider,
-  FAB,
-  IconButton,
-  Modal,
-  Portal,
-  Searchbar,
-  SegmentedButtons,
-  Surface,
-  Text,
-  TextInput,
-  Title,
-  useTheme
+    ActivityIndicator,
+    Avatar,
+    Button,
+    Card,
+    Chip,
+    Divider,
+    FAB,
+    IconButton,
+    Modal,
+    Portal,
+    Searchbar,
+    SegmentedButtons,
+    Surface,
+    Text,
+    TextInput,
+    Title,
+    useTheme
 } from 'react-native-paper';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -213,7 +214,7 @@ export default function AtivosScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
+        <View style={styles.headerWithPadding}>
           <Title>Meus Ativos</Title>
           <Text variant="bodyMedium" style={styles.subtitle}>
             {ativos.length} {ativos.length === 1 ? 'ativo' : 'ativos'} • 
@@ -479,141 +480,12 @@ export default function AtivosScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  loadingContainer: {
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  loadingText: {
-    marginTop: 16,
-  },
-  header: {
-    padding: 16,
-    paddingBottom: 8,
-  },
-  subtitle: {
-    opacity: 0.7,
-  },
-  searchbar: {
-    marginHorizontal: 16,
-    marginBottom: 8,
-  },
-  filterContainer: {
-    paddingHorizontal: 16,
-    paddingBottom: 8,
-  },
-  segmentedButtons: {
-    marginVertical: 8,
-  },
-  scrollView: {
-    flex: 1,
-    paddingHorizontal: 16,
-  },
-  card: {
-    marginBottom: 12,
-    elevation: 2,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  cardTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    flex: 1,
-  },
-  avatar: {
-    marginRight: 12,
-  },
-  titleContainer: {
-    flex: 1,
-  },
-  actions: {
-    flexDirection: 'row',
-  },
-  divider: {
-    marginVertical: 12,
-  },
-  cardBody: {
-    gap: 12,
-  },
-  infoRow: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
-  chip: {
-    marginRight: 4,
-  },
-  valuesContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-  },
-  valueItem: {
-    flex: 1,
-    alignItems: 'center',
-  },
-  label: {
-    opacity: 0.7,
-    marginBottom: 4,
-  },
-  totalValue: {
-    fontWeight: 'bold',
-  },
-  observacoesContainer: {
-    paddingTop: 8,
-  },
-  emptyState: {
-    padding: 32,
-    margin: 16,
-    alignItems: 'center',
-    borderRadius: 12,
-  },
-  emptyTitle: {
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  emptySubtitle: {
-    textAlign: 'center',
-    opacity: 0.7,
-  },
-  fab: {
-    position: 'absolute',
-    margin: 16,
-    right: 0,
-    bottom: 0,
-  },
+  ...sharedStyles,
+  ...buttonStyles,
+  ...screenSpecificStyles,
+  // Override específico para modal se necessário
   modal: {
-    backgroundColor: 'gray',
-    padding: 20,
-    margin: 20,
-    borderRadius: 12,
-    maxHeight: '90%',
-  },
-  modalContent: {
-    paddingBottom: 20,
-  },
-  input: {
-    marginBottom: 12,
-  },
-  formRow: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  halfInput: {
-    flex: 1,
-  },
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    gap: 12,
-  },
-  modalButton: {
-    flex: 1,
+    ...sharedStyles.modal,
+    backgroundColor: 'white',
   },
 });

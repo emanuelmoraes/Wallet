@@ -42,6 +42,24 @@ export default function TabLayout() {
           ),
         }}
       />
+      <Tabs.Screen
+        name="proventos"
+        options={{
+          title: 'Proventos',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="dollarsign.circle.fill" color={color} />
+          ),
+        }}
+      />
+      <Tabs.Screen
+        name="movimentacoes"
+        options={{
+          title: 'Movimentações',
+          tabBarIcon: ({ color }) => (
+            <IconSymbol size={28} name="arrow.left.arrow.right.circle.fill" color={color} />
+          ),
+        }}
+      />
     </Tabs>
   );
 }

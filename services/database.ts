@@ -1,9 +1,13 @@
 import { Ativo, CreateAtivoInput, DistribuicaoSegmento, DistribuicaoTipo, PortfolioStats, UpdateAtivoInput } from '@/types/ativo';
+import { CreateMovimentacaoInput, Movimentacao, MovimentacaoFilter, MovimentacaoStats, UpdateMovimentacaoInput } from '@/types/movimentacao';
+import { CreateProventoInput, Provento, ProventoFilter, ProventoStats, UpdateProventoInput } from '@/types/provento';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 
 class DatabaseService {
   private isInitialized = false;
   private readonly STORAGE_KEY = 'carteira-investimentos-ativos';
+  private readonly PROVENTOS_STORAGE_KEY = 'carteira-investimentos-proventos';
+  private readonly MOVIMENTACOES_STORAGE_KEY = 'carteira-investimentos-movimentacoes';
 
   constructor() {
     // AsyncStorage não precisa de configuração inicial
@@ -15,12 +19,28 @@ class DatabaseService {
     }
 
     try {
-      // Verificar se existem dados
+      // Verificar se existem dados de ativos
       const ativosData = await AsyncStorage.getItem(this.STORAGE_KEY);
       if (!ativosData) {
         // Inicializar com array vazio
         await AsyncStorage.setItem(this.STORAGE_KEY, JSON.stringify([]));
-        console.log('✅ Armazenamento inicializado com dados vazios');
+        console.log('✅ Armazenamento de ativos inicializado com dados vazios');
+      }
+
+      // Verificar se existem dados de proventos
+      const proventosData = await AsyncStorage.getItem(this.PROVENTOS_STORAGE_KEY);
+      if (!proventosData) {
+        // Inicializar com array vazio
+        await AsyncStorage.setItem(this.PROVENTOS_STORAGE_KEY, JSON.stringify([]));
+        console.log('✅ Armazenamento de proventos inicializado com dados vazios');
+      }
+
+      // Verificar se existem dados de movimentações
+      const movimentacoesData = await AsyncStorage.getItem(this.MOVIMENTACOES_STORAGE_KEY);
+      if (!movimentacoesData) {
+        // Inicializar com array vazio
+        await AsyncStorage.setItem(this.MOVIMENTACOES_STORAGE_KEY, JSON.stringify([]));
+        console.log('✅ Armazenamento de movimentações inicializado com dados vazios');
       }
       
       this.isInitialized = true;
@@ -49,6 +69,46 @@ class DatabaseService {
   private async generateId(): Promise<number> {
     const ativos = await this.getAtivosFromStorage();
     return ativos.length > 0 ? Math.max(...ativos.map(a => a.id)) + 1 : 1;
+  }
+
+  // Métodos auxiliares para proventos
+  private async saveProventos(proventos: Provento[]): Promise<void> {
+    await AsyncStorage.setItem(this.PROVENTOS_STORAGE_KEY, JSON.stringify(proventos));
+  }
+
+  private async getProventosFromStorage(): Promise<Provento[]> {
+    try {
+      const proventosString = await AsyncStorage.getItem(this.PROVENTOS_STORAGE_KEY);
+      return proventosString ? JSON.parse(proventosString) : [];
+    } catch (error) {
+      console.error('❌ Erro ao carregar proventos:', error);
+      return [];
+    }
+  }
+
+  private async generateProventoId(): Promise<number> {
+    const proventos = await this.getProventosFromStorage();
+    return proventos.length > 0 ? Math.max(...proventos.map(p => p.id)) + 1 : 1;
+  }
+
+  // Métodos auxiliares para movimentações
+  private async saveMovimentacoes(movimentacoes: Movimentacao[]): Promise<void> {
+    await AsyncStorage.setItem(this.MOVIMENTACOES_STORAGE_KEY, JSON.stringify(movimentacoes));
+  }
+
+  private async getMovimentacoesFromStorage(): Promise<Movimentacao[]> {
+    try {
+      const movimentacoesString = await AsyncStorage.getItem(this.MOVIMENTACOES_STORAGE_KEY);
+      return movimentacoesString ? JSON.parse(movimentacoesString) : [];
+    } catch (error) {
+      console.error('❌ Erro ao carregar movimentações:', error);
+      return [];
+    }
+  }
+
+  private async generateMovimentacaoId(): Promise<number> {
+    const movimentacoes = await this.getMovimentacoesFromStorage();
+    return movimentacoes.length > 0 ? Math.max(...movimentacoes.map(m => m.id)) + 1 : 1;
   }
 
   // CREATE
@@ -424,6 +484,408 @@ class DatabaseService {
     } catch (error) {
       console.error('❌ Erro ao importar dados:', error);
       throw error;
+    }
+  }
+
+  // =============================================================================
+  // MÉTODOS PARA PROVENTOS
+  // =============================================================================
+
+  // CREATE PROVENTO
+  async createProvento(input: CreateProventoInput): Promise<number | null> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      const proventos = await this.getProventosFromStorage();
+      const ativos = await this.getAtivosFromStorage();
+      
+      // Verificar se o ativo existe
+      const ativo = ativos.find(a => a.id === input.ativoId);
+      if (!ativo) {
+        throw new Error('Ativo não encontrado');
+      }
+
+      const id = await this.generateProventoId();
+      const now = new Date().toISOString();
+
+      const novoProvento: Provento = {
+        id,
+        ativoId: input.ativoId,
+        ativoTicker: ativo.ticker,
+        ativoNome: ativo.nome,
+        data: input.data,
+        valor: input.valor,
+        tipo: input.tipo,
+        observacoes: input.observacoes,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      proventos.push(novoProvento);
+      await this.saveProventos(proventos);
+
+      console.log(`✅ Provento criado com ID: ${id}`);
+      return id;
+    } catch (error) {
+      console.error('❌ Erro ao criar provento:', error);
+      throw error;
+    }
+  }
+
+  // READ PROVENTOS
+  async getProventos(filter?: ProventoFilter): Promise<Provento[]> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      let proventos = await this.getProventosFromStorage();
+      
+      // Aplicar filtros se fornecidos
+      if (filter) {
+        if (filter.ativoId) {
+          proventos = proventos.filter(p => p.ativoId === filter.ativoId);
+        }
+        if (filter.tipo) {
+          proventos = proventos.filter(p => p.tipo === filter.tipo);
+        }
+        if (filter.dataInicio) {
+          proventos = proventos.filter(p => p.data >= filter.dataInicio!);
+        }
+        if (filter.dataFim) {
+          proventos = proventos.filter(p => p.data <= filter.dataFim!);
+        }
+        if (filter.valorMinimo) {
+          proventos = proventos.filter(p => p.valor >= filter.valorMinimo!);
+        }
+        if (filter.valorMaximo) {
+          proventos = proventos.filter(p => p.valor <= filter.valorMaximo!);
+        }
+      }
+
+      // Ordenar por data (mais recentes primeiro)
+      return proventos.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+    } catch (error) {
+      console.error('❌ Erro ao buscar proventos:', error);
+      return [];
+    }
+  }
+
+  // GET PROVENTO BY ID
+  async getProventoById(id: number): Promise<Provento | null> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      const proventos = await this.getProventosFromStorage();
+      return proventos.find(p => p.id === id) || null;
+    } catch (error) {
+      console.error('❌ Erro ao buscar provento por ID:', error);
+      return null;
+    }
+  }
+
+  // UPDATE PROVENTO
+  async updateProvento(input: UpdateProventoInput): Promise<boolean> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      const proventos = await this.getProventosFromStorage();
+      const ativos = await this.getAtivosFromStorage();
+      const index = proventos.findIndex(p => p.id === input.id);
+
+      if (index === -1) {
+        throw new Error('Provento não encontrado');
+      }
+
+      // Verificar se o ativo existe
+      const ativo = ativos.find(a => a.id === input.ativoId);
+      if (!ativo) {
+        throw new Error('Ativo não encontrado');
+      }
+
+      const now = new Date().toISOString();
+      proventos[index] = {
+        ...proventos[index],
+        ativoId: input.ativoId,
+        ativoTicker: ativo.ticker,
+        ativoNome: ativo.nome,
+        data: input.data,
+        valor: input.valor,
+        tipo: input.tipo,
+        observacoes: input.observacoes,
+        updatedAt: now,
+      };
+
+      await this.saveProventos(proventos);
+      console.log(`✅ Provento atualizado: ${input.id}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao atualizar provento:', error);
+      throw error;
+    }
+  }
+
+  // DELETE PROVENTO
+  async deleteProvento(id: number): Promise<boolean> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      const proventos = await this.getProventosFromStorage();
+      const index = proventos.findIndex(p => p.id === id);
+
+      if (index === -1) {
+        throw new Error('Provento não encontrado');
+      }
+
+      proventos.splice(index, 1);
+      await this.saveProventos(proventos);
+
+      console.log(`✅ Provento deletado: ${id}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao deletar provento:', error);
+      throw error;
+    }
+  }
+
+  // ESTATÍSTICAS DOS PROVENTOS
+  async getProventoStats(): Promise<ProventoStats> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      const proventos = await this.getProventosFromStorage();
+      const now = new Date();
+      const inicioMes = new Date(now.getFullYear(), now.getMonth(), 1);
+      const inicioAno = new Date(now.getFullYear(), 0, 1);
+
+      const totalRecebido = proventos.reduce((sum, p) => sum + p.valor, 0);
+      
+      const totalPorTipo = {
+        rendimento: proventos.filter(p => p.tipo === 'rendimento').reduce((sum, p) => sum + p.valor, 0),
+        jcp: proventos.filter(p => p.tipo === 'jcp').reduce((sum, p) => sum + p.valor, 0),
+        dividendo: proventos.filter(p => p.tipo === 'dividendo').reduce((sum, p) => sum + p.valor, 0),
+      };
+
+      const proventosMes = proventos
+        .filter(p => new Date(p.data) >= inicioMes)
+        .reduce((sum, p) => sum + p.valor, 0);
+
+      const proventosAno = proventos
+        .filter(p => new Date(p.data) >= inicioAno)
+        .reduce((sum, p) => sum + p.valor, 0);
+
+      return {
+        totalRecebido,
+        totalPorTipo,
+        proventosMes,
+        proventosAno,
+      };
+    } catch (error) {
+      console.error('❌ Erro ao calcular estatísticas de proventos:', error);
+      return {
+        totalRecebido: 0,
+        totalPorTipo: { rendimento: 0, jcp: 0, dividendo: 0 },
+        proventosMes: 0,
+        proventosAno: 0,
+      };
+    }
+  }
+
+  // =============================================================================
+  // MÉTODOS PARA MOVIMENTAÇÕES
+  // =============================================================================
+
+  // CREATE MOVIMENTACAO
+  async createMovimentacao(input: CreateMovimentacaoInput): Promise<number | null> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      const movimentacoes = await this.getMovimentacoesFromStorage();
+      const id = await this.generateMovimentacaoId();
+      const now = new Date().toISOString();
+
+      const valorTotal = input.valorUnitario * input.quantidade;
+
+      const novaMovimentacao: Movimentacao = {
+        id,
+        ativo: input.ativo.toUpperCase(),
+        quantidade: input.quantidade,
+        segmento: input.segmento,
+        data: input.data,
+        valorUnitario: input.valorUnitario,
+        valorTotal,
+        operacao: input.operacao,
+        observacao: input.observacao,
+        createdAt: now,
+        updatedAt: now,
+      };
+
+      movimentacoes.push(novaMovimentacao);
+      await this.saveMovimentacoes(movimentacoes);
+
+      console.log(`✅ Movimentação criada com ID: ${id}`);
+      return id;
+    } catch (error) {
+      console.error('❌ Erro ao criar movimentação:', error);
+      throw error;
+    }
+  }
+
+  // READ MOVIMENTACOES
+  async getMovimentacoes(filter?: MovimentacaoFilter): Promise<Movimentacao[]> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      let movimentacoes = await this.getMovimentacoesFromStorage();
+      
+      // Aplicar filtros se fornecidos
+      if (filter) {
+        if (filter.ativo) {
+          movimentacoes = movimentacoes.filter(m => m.ativo.toLowerCase().includes(filter.ativo!.toLowerCase()));
+        }
+        if (filter.segmento) {
+          movimentacoes = movimentacoes.filter(m => m.segmento === filter.segmento);
+        }
+        if (filter.operacao) {
+          movimentacoes = movimentacoes.filter(m => m.operacao === filter.operacao);
+        }
+        if (filter.dataInicio) {
+          movimentacoes = movimentacoes.filter(m => m.data >= filter.dataInicio!);
+        }
+        if (filter.dataFim) {
+          movimentacoes = movimentacoes.filter(m => m.data <= filter.dataFim!);
+        }
+        if (filter.valorMinimo) {
+          movimentacoes = movimentacoes.filter(m => m.valorTotal >= filter.valorMinimo!);
+        }
+        if (filter.valorMaximo) {
+          movimentacoes = movimentacoes.filter(m => m.valorTotal <= filter.valorMaximo!);
+        }
+      }
+
+      // Ordenar por data (mais recentes primeiro)
+      return movimentacoes.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+    } catch (error) {
+      console.error('❌ Erro ao buscar movimentações:', error);
+      return [];
+    }
+  }
+
+  // GET MOVIMENTACAO BY ID
+  async getMovimentacaoById(id: number): Promise<Movimentacao | null> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      const movimentacoes = await this.getMovimentacoesFromStorage();
+      return movimentacoes.find(m => m.id === id) || null;
+    } catch (error) {
+      console.error('❌ Erro ao buscar movimentação por ID:', error);
+      return null;
+    }
+  }
+
+  // UPDATE MOVIMENTACAO
+  async updateMovimentacao(input: UpdateMovimentacaoInput): Promise<boolean> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      const movimentacoes = await this.getMovimentacoesFromStorage();
+      const index = movimentacoes.findIndex(m => m.id === input.id);
+
+      if (index === -1) {
+        throw new Error('Movimentação não encontrada');
+      }
+
+      const now = new Date().toISOString();
+      const valorTotal = input.valorUnitario * input.quantidade;
+
+      movimentacoes[index] = {
+        ...movimentacoes[index],
+        ativo: input.ativo.toUpperCase(),
+        quantidade: input.quantidade,
+        segmento: input.segmento,
+        data: input.data,
+        valorUnitario: input.valorUnitario,
+        valorTotal,
+        operacao: input.operacao,
+        observacao: input.observacao,
+        updatedAt: now,
+      };
+
+      await this.saveMovimentacoes(movimentacoes);
+      console.log(`✅ Movimentação atualizada: ${input.id}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao atualizar movimentação:', error);
+      throw error;
+    }
+  }
+
+  // DELETE MOVIMENTACAO
+  async deleteMovimentacao(id: number): Promise<boolean> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      const movimentacoes = await this.getMovimentacoesFromStorage();
+      const index = movimentacoes.findIndex(m => m.id === id);
+
+      if (index === -1) {
+        throw new Error('Movimentação não encontrada');
+      }
+
+      movimentacoes.splice(index, 1);
+      await this.saveMovimentacoes(movimentacoes);
+
+      console.log(`✅ Movimentação deletada: ${id}`);
+      return true;
+    } catch (error) {
+      console.error('❌ Erro ao deletar movimentação:', error);
+      throw error;
+    }
+  }
+
+  // ESTATÍSTICAS DAS MOVIMENTAÇÕES
+  async getMovimentacaoStats(): Promise<MovimentacaoStats> {
+    try {
+      if (!this.isInitialized) throw new Error('Database not initialized');
+
+      const movimentacoes = await this.getMovimentacoesFromStorage();
+
+      const totalInvestido = movimentacoes
+        .filter(m => m.operacao === 'compra' || m.operacao === 'subscricao')
+        .reduce((sum, m) => sum + m.valorTotal, 0);
+
+      const totalRecebido = movimentacoes
+        .filter(m => m.operacao === 'venda')
+        .reduce((sum, m) => sum + m.valorTotal, 0);
+
+      const saldoLiquido = totalRecebido - totalInvestido;
+      const totalOperacoes = movimentacoes.length;
+
+      const operacoesPorTipo = {
+        compra: movimentacoes.filter(m => m.operacao === 'compra').length,
+        venda: movimentacoes.filter(m => m.operacao === 'venda').length,
+        subscricao: movimentacoes.filter(m => m.operacao === 'subscricao').length,
+      };
+
+      const volumeTotal = movimentacoes.reduce((sum, m) => sum + m.valorTotal, 0);
+
+      return {
+        totalInvestido,
+        totalRecebido,
+        saldoLiquido,
+        totalOperacoes,
+        operacoesPorTipo,
+        volumeTotal,
+      };
+    } catch (error) {
+      console.error('❌ Erro ao calcular estatísticas de movimentações:', error);
+      return {
+        totalInvestido: 0,
+        totalRecebido: 0,
+        saldoLiquido: 0,
+        totalOperacoes: 0,
+        operacoesPorTipo: { compra: 0, venda: 0, subscricao: 0 },
+        volumeTotal: 0,
+      };
     }
   }
 }
