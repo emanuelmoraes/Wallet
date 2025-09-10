@@ -5,23 +5,23 @@ import React, { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
-    ActivityIndicator,
-    Avatar,
-    Button,
-    Card,
-    Chip,
-    Divider,
-    FAB,
-    IconButton,
-    Modal,
-    Portal,
-    Searchbar,
-    SegmentedButtons,
-    Surface,
-    Text,
-    TextInput,
-    Title,
-    useTheme
+  ActivityIndicator,
+  Avatar,
+  Button,
+  Card,
+  Chip,
+  Divider,
+  FAB,
+  IconButton,
+  Modal,
+  Portal,
+  Searchbar,
+  SegmentedButtons,
+  Surface,
+  Text,
+  TextInput,
+  Title,
+  useTheme
 } from 'react-native-paper';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -360,7 +360,9 @@ export default function AtivosScreen() {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.modalContent}
             >
-              <Title>{editingId ? 'Editar Ativo' : 'Novo Ativo'}</Title>
+              <Title
+                style={{ marginBottom: 16, color: theme.colors.primary }}
+              >{editingId ? 'Editar Ativo' : 'Novo Ativo'}</Title>
               
               <TextInput
                 label="Nome do Ativo"
@@ -388,11 +390,11 @@ export default function AtivosScreen() {
                   precision={2}
                   minValue={0}
                   placeholder="R$ 0,00"
-                  style={[styles.input, styles.halfInput]}
+                  style={[styles.currencyInput, styles.halfInput]}
                 />
 
                 <TextInput
-                  label="Quantidade"
+                  placeholder="Quantidade"
                   value={formData.quantidade?.toString() || ''}
                   onChangeText={(text) => setFormData(prev => ({ ...prev, quantidade: parseFloat(text) || undefined }))}
                   style={[styles.input, styles.halfInput]}
@@ -485,7 +487,6 @@ const styles = StyleSheet.create({
   ...screenSpecificStyles,
   // Override específico para modal se necessário
   modal: {
-    ...sharedStyles.modal,
-    backgroundColor: 'white',
+    ...sharedStyles.modal
   },
 });

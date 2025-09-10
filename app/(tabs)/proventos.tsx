@@ -21,8 +21,9 @@ import {
   Text,
   TextInput,
   Title,
-  useTheme
+  useTheme,
 } from 'react-native-paper';
+import { DatePickerModal } from 'react-native-paper-dates';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProventosScreen() {
@@ -48,7 +49,8 @@ export default function ProventosScreen() {
   const [dateFilter, setDateFilter] = useState('todos');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+
   const [formData, setFormData] = useState<Partial<CreateProventoInput>>({
     ativoId: 0,
     data: new Date().toISOString().split('T')[0],
@@ -116,7 +118,7 @@ export default function ProventosScreen() {
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(provento => 
+      filtered = filtered.filter(provento =>
         provento.ativoTicker.toLowerCase().includes(query) ||
         provento.ativoNome.toLowerCase().includes(query) ||
         provento.tipo.toLowerCase().includes(query)
@@ -214,6 +216,18 @@ export default function ProventosScreen() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const onDismissDatePicker = () => {
+    setDatePickerVisible(false);
+  };
+
+  const onConfirmDate = (params: any) => {
+    setDatePickerVisible(false);
+    if (params.date) {
+      const formattedDate = params.date.toISOString().split('T')[0];
+      setFormData(prev => ({ ...prev, data: formattedDate }));
+    }
+  };
+
   const getTipoIcon = (tipo: TipoProvento) => {
     switch (tipo) {
       case 'dividendo': return 'cash-multiple';
@@ -282,7 +296,7 @@ export default function ProventosScreen() {
         <View style={styles.header}>
           <Title>Meus Proventos</Title>
           <Text variant="bodyMedium" style={styles.subtitle}>
-            {proventos.length} {proventos.length === 1 ? 'provento' : 'proventos'} • 
+            {proventos.length} {proventos.length === 1 ? 'provento' : 'proventos'} •
             {filteredProventos.length} {filteredProventos.length === 1 ? 'exibido' : 'exibidos'}
           </Text>
         </View>
@@ -313,7 +327,7 @@ export default function ProventosScreen() {
           />
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           refreshControl={
             <RefreshControl
@@ -327,8 +341,8 @@ export default function ProventosScreen() {
               <Card.Content>
                 <View style={styles.cardHeader}>
                   <View style={styles.cardTitleRow}>
-                    <Avatar.Icon 
-                      size={40} 
+                    <Avatar.Icon
+                      size={40}
                       icon={getTipoIcon(provento.tipo)}
                       style={[styles.avatar, { backgroundColor: getTipoColor(provento.tipo) }]}
                     />
@@ -359,7 +373,7 @@ export default function ProventosScreen() {
 
                 <View style={styles.cardBody}>
                   <View style={styles.infoRow}>
-                    <Chip 
+                    <Chip
                       icon={getTipoIcon(provento.tipo)}
                       textStyle={{ color: getTipoColor(provento.tipo) }}
                       style={[styles.chip, { borderColor: getTipoColor(provento.tipo) }]}
@@ -403,7 +417,7 @@ export default function ProventosScreen() {
                 {searchQuery ? 'Nenhum provento encontrado' : 'Nenhum provento cadastrado'}
               </Text>
               <Text variant="bodyMedium" style={styles.emptySubtitle}>
-                {searchQuery 
+                {searchQuery
                   ? 'Tente ajustar sua busca ou filtros'
                   : 'Comece adicionando seu primeiro provento'
                 }
@@ -426,15 +440,17 @@ export default function ProventosScreen() {
             onDismiss={handleCloseModal}
             contentContainerStyle={styles.modal}
           >
-            <ScrollView 
+            <ScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.modalContent}
             >
-              <Title>{editingId ? 'Editar Provento' : 'Novo Provento'}</Title>
-              
+              <Title
+                style={{ marginBottom: 16, color: theme.colors.primary }}
+              >{editingId ? 'Editar Provento' : 'Novo Provento'}</Title>
+
               <View style={styles.formGroup}>
                 <Text variant="bodySmall" style={styles.pickerLabel}>Ativo *</Text>
-                <ScrollView style={styles.ativoSelector} nestedScrollEnabled>
+                <ScrollView style={styles.ativoSelector} nestedScrollEnabled horizontal>
                   {ativos.map((ativo) => (
                     <Button
                       key={ativo.id}
@@ -451,11 +467,22 @@ export default function ProventosScreen() {
 
               <TextInput
                 label="Data"
-                value={formData.data || ''}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, data: text }))}
+                value={formData.data ? new Date(formData.data).toLocaleDateString('pt-BR') : ''}
                 style={styles.input}
                 mode="flat"
-                placeholder="AAAA-MM-DD"
+                right={<TextInput.Icon icon="calendar" onPress={() => setDatePickerVisible(true)} />}
+                onPress={() => setDatePickerVisible(true)}
+                showSoftInputOnFocus={false}
+                editable={false}
+              />
+
+              <DatePickerModal
+                locale="pt-BR"
+                mode="single"
+                visible={datePickerVisible}
+                onDismiss={onDismissDatePicker}
+                date={formData.data ? new Date(formData.data) : new Date()}
+                onConfirm={onConfirmDate}
               />
 
               <View style={styles.formRow}>
@@ -472,7 +499,7 @@ export default function ProventosScreen() {
                 />
 
                 <View style={styles.halfInput}>
-                  <Text variant="bodySmall" style={styles.pickerLabel}>Tipo</Text>
+                  {/* <Text variant="bodySmall" style={styles.pickerLabel}>Tipo</Text> */}
                   <View style={styles.typeButtons}>
                     {(['dividendo', 'jcp', 'rendimento'] as TipoProvento[]).map((tipo) => (
                       <Button
@@ -500,15 +527,15 @@ export default function ProventosScreen() {
               />
 
               <View style={styles.modalActions}>
-                <Button 
-                  mode="outlined" 
+                <Button
+                  mode="outlined"
                   onPress={handleCloseModal}
                   style={styles.modalButton}
                 >
                   Cancelar
                 </Button>
-                <Button 
-                  mode="contained" 
+                <Button
+                  mode="contained"
                   onPress={handleSaveProvento}
                   loading={saving}
                   disabled={saving || !formData.ativoId || !formData.valor}

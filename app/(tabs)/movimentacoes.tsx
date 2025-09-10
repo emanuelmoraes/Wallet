@@ -23,6 +23,7 @@ import {
   Title,
   useTheme
 } from 'react-native-paper';
+import { DatePickerModal } from 'react-native-paper-dates';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MovimentacoesScreen() {
@@ -46,7 +47,8 @@ export default function MovimentacoesScreen() {
   const [dateFilter, setDateFilter] = useState('todos');
   const [saving, setSaving] = useState(false);
   const [deleting, setDeleting] = useState(false);
-  
+  const [datePickerVisible, setDatePickerVisible] = useState(false);
+
   const [formData, setFormData] = useState<Partial<CreateMovimentacaoInput>>({
     ativo: '',
     quantidade: undefined,
@@ -116,7 +118,7 @@ export default function MovimentacoesScreen() {
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(movimentacao => 
+      filtered = filtered.filter(movimentacao =>
         movimentacao.ativo.toLowerCase().includes(query) ||
         movimentacao.segmento.toLowerCase().includes(query) ||
         movimentacao.operacao.toLowerCase().includes(query)
@@ -220,6 +222,18 @@ export default function MovimentacoesScreen() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const onDismissDatePicker = () => {
+    setDatePickerVisible(false);
+  };
+
+  const onConfirmDate = (params: any) => {
+    setDatePickerVisible(false);
+    if (params.date) {
+      const formattedDate = params.date.toISOString().split('T')[0];
+      setFormData(prev => ({ ...prev, data: formattedDate }));
+    }
+  };
+
   const getOperacaoIcon = (operacao: TipoOperacao) => {
     switch (operacao) {
       case 'compra': return 'arrow-down-bold';
@@ -312,7 +326,7 @@ export default function MovimentacoesScreen() {
         <View style={styles.header}>
           <Title>Minhas Movimentações</Title>
           <Text variant="bodyMedium" style={styles.subtitle}>
-            {movimentacoes.length} {movimentacoes.length === 1 ? 'movimentação' : 'movimentações'} • 
+            {movimentacoes.length} {movimentacoes.length === 1 ? 'movimentação' : 'movimentações'} •
             {filteredMovimentacoes.length} {filteredMovimentacoes.length === 1 ? 'exibida' : 'exibidas'}
           </Text>
         </View>
@@ -343,7 +357,7 @@ export default function MovimentacoesScreen() {
           />
         </View>
 
-        <ScrollView 
+        <ScrollView
           style={styles.scrollView}
           refreshControl={
             <RefreshControl
@@ -357,8 +371,8 @@ export default function MovimentacoesScreen() {
               <Card.Content>
                 <View style={styles.cardHeader}>
                   <View style={styles.cardTitleRow}>
-                    <Avatar.Icon 
-                      size={40} 
+                    <Avatar.Icon
+                      size={40}
                       icon={getOperacaoIcon(movimentacao.operacao)}
                       style={[styles.avatar, { backgroundColor: getOperacaoColor(movimentacao.operacao) }]}
                     />
@@ -389,7 +403,7 @@ export default function MovimentacoesScreen() {
 
                 <View style={styles.cardBody}>
                   <View style={styles.infoRow}>
-                    <Chip 
+                    <Chip
                       icon={getOperacaoIcon(movimentacao.operacao)}
                       textStyle={{ color: getOperacaoColor(movimentacao.operacao) }}
                       style={[styles.chip, { borderColor: getOperacaoColor(movimentacao.operacao) }]}
@@ -397,7 +411,7 @@ export default function MovimentacoesScreen() {
                     >
                       {getOperacaoLabel(movimentacao.operacao)}
                     </Chip>
-                    <Chip 
+                    <Chip
                       icon={getSegmentoIcon(movimentacao.segmento)}
                       style={styles.chip}
                       mode="outlined"
@@ -445,7 +459,7 @@ export default function MovimentacoesScreen() {
                 {searchQuery ? 'Nenhuma movimentação encontrada' : 'Nenhuma movimentação cadastrada'}
               </Text>
               <Text variant="bodyMedium" style={styles.emptySubtitle}>
-                {searchQuery 
+                {searchQuery
                   ? 'Tente ajustar sua busca ou filtros'
                   : 'Comece adicionando sua primeira movimentação'
                 }
@@ -468,12 +482,13 @@ export default function MovimentacoesScreen() {
             onDismiss={handleCloseModal}
             contentContainerStyle={styles.modal}
           >
-            <ScrollView 
+            <ScrollView
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.modalContent}
             >
-              <Title>{editingId ? 'Editar Movimentação' : 'Nova Movimentação'}</Title>
-              
+              <Title style={{ marginBottom: 16, color: theme.colors.primary }}
+              >{editingId ? 'Editar Movimentação' : 'Nova Movimentação'}</Title>
+
               <TextInput
                 label="Ativo (Ticker)"
                 value={formData.ativo || ''}
@@ -507,11 +522,22 @@ export default function MovimentacoesScreen() {
 
               <TextInput
                 label="Data"
-                value={formData.data || ''}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, data: text }))}
+                value={formData.data ? new Date(formData.data).toLocaleDateString('pt-BR') : ''}
                 style={styles.input}
                 mode="flat"
-                placeholder="AAAA-MM-DD"
+                right={<TextInput.Icon icon="calendar" onPress={() => setDatePickerVisible(true)} />}
+                onPress={() => setDatePickerVisible(true)}
+                showSoftInputOnFocus={false}
+                editable={false}
+              />
+
+              <DatePickerModal
+                locale="pt-BR"
+                mode="single"
+                visible={datePickerVisible}
+                onDismiss={onDismissDatePicker}
+                date={formData.data ? new Date(formData.data) : new Date()}
+                onConfirm={onConfirmDate}
               />
 
               <View style={styles.formGroup}>
@@ -559,15 +585,15 @@ export default function MovimentacoesScreen() {
               />
 
               <View style={styles.modalActions}>
-                <Button 
-                  mode="outlined" 
+                <Button
+                  mode="outlined"
                   onPress={handleCloseModal}
                   style={styles.modalButton}
                 >
                   Cancelar
                 </Button>
-                <Button 
-                  mode="contained" 
+                <Button
+                  mode="contained"
                   onPress={handleSaveMovimentacao}
                   loading={saving}
                   disabled={saving || !formData.ativo || !formData.quantidade || !formData.valorUnitario}

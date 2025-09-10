@@ -180,13 +180,20 @@ export const sharedStyles = StyleSheet.create({
   // Form styles
   input: {
     marginBottom: 12,
+    backgroundColor: 'transparent',
+    borderWidth: 1,
+    borderColor: '#000000',
+    borderRadius: 4,
   },
   currencyInput: {
-    borderBottomWidth: 1,
-    borderBottomColor: '#ccc',
+    borderWidth: 1,
+    borderColor: '#000000',
+    backgroundColor: 'transparent',
     paddingVertical: 8,
     paddingHorizontal: 12,
     fontSize: 16,
+    borderRadius: 4,
+    height: 59,
   },
   formRow: {
     flexDirection: 'row',
@@ -202,6 +209,7 @@ export const sharedStyles = StyleSheet.create({
   pickerLabel: {
     marginBottom: 8,
     opacity: 0.7,
+    color: '#000000',
   },
 
   // Modal action styles
@@ -230,10 +238,16 @@ export const buttonStyles = StyleSheet.create({
   
   // Tipo buttons (proventos)
   typeButtons: {
-    gap: 4,
+    gap: 2,
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'center',
+    alignContent: 'center',
   },
   typeButton: {
-    marginBottom: 4,
+    marginTop: 4,
+    marginBottom: 2,
+    width: '32%',
   },
 
   // Segmento buttons (movimentações)
@@ -243,7 +257,9 @@ export const buttonStyles = StyleSheet.create({
     gap: 4,
   },
   segmentoButton: {
+    flex: 1,
     marginBottom: 4,
+    minWidth: 80,
   },
 
   // Operação buttons (movimentações)
@@ -270,6 +286,7 @@ export const screenSpecificStyles = StyleSheet.create({
   ativoButton: {
     marginBottom: 4,
     justifyContent: 'flex-start',
+    maxWidth: '20%',
   },
 
   // Picker container styles (quando necessário)
