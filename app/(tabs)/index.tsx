@@ -1,4 +1,5 @@
 import { useAtivos } from '@/hooks/useAtivos';
+import { sharedStyles } from '@/styles/sharedStyles';
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import {
@@ -75,15 +76,36 @@ export default function PortfolioScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        {/* Header */}
-        <Surface style={styles.header} elevation={2}>
-          <Title style={styles.title}>Meu Portfolio</Title>
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            Visão geral dos seus investimentos
-          </Text>
+        {/* Header com estatísticas */}
+        <Surface style={sharedStyles.statsContainer}>
+          <View style={sharedStyles.titleSection}>
+            <Title style={sharedStyles.mainTitle}>Meu Portfolio</Title>
+          </View>
+          <View style={sharedStyles.statsRow}>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#2196F3' }]}>
+                {portfolioStats ? formatCurrency(portfolioStats.valorTotal) : 'R$ 0,00'}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Valor Total</Text>
+            </View>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { 
+                color: portfolioStats && isPositive(portfolioStats.rendimentoTotal) ? '#4CAF50' : '#f44336' 
+              }]}>
+                {portfolioStats ? formatCurrency(portfolioStats.rendimentoTotal) : 'R$ 0,00'}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Rendimento</Text>
+            </View>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#FF9800' }]}>
+                {ativos.length}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Ativos</Text>
+            </View>
+          </View>
         </Surface>
 
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
+        <ScrollView style={sharedStyles.scrollView} showsVerticalScrollIndicator={false}>
           {/* Card Resumo Principal */}
           <Card style={styles.summaryCard} mode="elevated">
             <Card.Content>

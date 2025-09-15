@@ -89,6 +89,18 @@ export default function AtivosScreen() {
     setFilteredAtivos(filtered);
   }, [ativos, filterType, searchQuery]);
 
+  // Calculate ativos statistics
+  const calculateAtivosStats = () => {
+    const totalAtivos = ativos.length;
+    const totalInvestido = ativos.reduce((total, ativo) => 
+      total + (ativo.preco * ativo.quantidade), 0);
+    const ativosAtivos = ativos.filter(ativo => ativo.status === 'ativo').length;
+    
+    return { totalAtivos, totalInvestido, ativosAtivos };
+  };
+
+  const { totalAtivos, totalInvestido, ativosAtivos } = calculateAtivosStats();
+
   const resetForm = () => {
     setFormData({
       nome: '',
@@ -214,32 +226,51 @@ export default function AtivosScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
-        <View style={styles.headerWithPadding}>
-          <Title>Meus Ativos</Title>
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            {ativos.length} {ativos.length === 1 ? 'ativo' : 'ativos'} • 
-            {filteredAtivos.length} {filteredAtivos.length === 1 ? 'exibido' : 'exibidos'}
-          </Text>
-        </View>
+        {/* Header com estatísticas */}
+        <Surface style={sharedStyles.statsContainer}>
+          <View style={sharedStyles.titleSection}>
+            <Title style={sharedStyles.mainTitle}>Meus Ativos</Title>
+          </View>
+          <View style={sharedStyles.statsRow}>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#2196F3' }]}>
+                {totalAtivos}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Total</Text>
+            </View>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#4CAF50' }]}>
+                {ativosAtivos}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Ativos</Text>
+            </View>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#FF9800' }]}>
+                {formatCurrency(totalInvestido)}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Investido</Text>
+            </View>
+          </View>
+        </Surface>
 
         <Searchbar
           placeholder="Buscar por nome, ticker ou setor..."
           onChangeText={setSearchQuery}
           value={searchQuery}
-          style={styles.searchbar}
+          style={sharedStyles.searchbar}
         />
 
-        <View style={styles.filterContainer}>
+        <View style={sharedStyles.filterContainer}>
           <SegmentedButtons
             value={filterType}
             onValueChange={setFilterType}
             buttons={tiposAtivo}
-            style={styles.segmentedButtons}
+            style={sharedStyles.segmentedButtons}
           />
         </View>
 
         <ScrollView 
-          style={styles.scrollView}
+          style={sharedStyles.scrollView}
           refreshControl={
             <RefreshControl
               refreshing={loading}

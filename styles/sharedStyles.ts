@@ -14,16 +14,38 @@ export const sharedStyles = StyleSheet.create({
   loadingText: {
     textAlign: 'center',
   },
+  mainTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    textAlign: 'center',
+  },
+
+  statsGrid: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    alignItems: 'center',
+  },
 
   // Stats header styles
   statsContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
     padding: 16,
     margin: 16,
     borderRadius: 12,
     elevation: 2,
   },
+  
+  // Padronização dos headers das telas
+  titleSection: {
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  
+  statsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+  },
+  
   statItem: {
     alignItems: 'center',
   },

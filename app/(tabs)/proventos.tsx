@@ -272,58 +272,55 @@ export default function ProventosScreen() {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         {/* Header com estatísticas */}
-        <Surface style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text variant="headlineSmall" style={styles.statValue}>
-              {formatCurrency(stats.totalRecebido)}
-            </Text>
-            <Text variant="bodyMedium" style={styles.statLabel}>Total Recebido</Text>
+        <Surface style={sharedStyles.statsContainer}>
+          <View style={sharedStyles.titleSection}>
+            <Title style={sharedStyles.mainTitle}>Meus proventos</Title>
           </View>
-          <View style={styles.statItem}>
-            <Text variant="headlineSmall" style={styles.statValue}>
-              {formatCurrency(stats.proventosMes)}
-            </Text>
-            <Text variant="bodyMedium" style={styles.statLabel}>Este Mês</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text variant="headlineSmall" style={styles.statValue}>
-              {formatCurrency(stats.proventosAno)}
-            </Text>
-            <Text variant="bodyMedium" style={styles.statLabel}>Este Ano</Text>
+          <View style={sharedStyles.statsRow}>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#4CAF50' }]}>
+                {formatCurrency(stats.totalRecebido)}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Total Recebido</Text>
+            </View>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#2196F3' }]}>
+                {formatCurrency(stats.proventosMes)}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Este Mês</Text>
+            </View>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#FF9800' }]}>
+                {formatCurrency(stats.proventosAno)}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Este Ano</Text>
+            </View>
           </View>
         </Surface>
-
-        <View style={styles.header}>
-          <Title>Meus Proventos</Title>
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            {proventos.length} {proventos.length === 1 ? 'provento' : 'proventos'} •
-            {filteredProventos.length} {filteredProventos.length === 1 ? 'exibido' : 'exibidos'}
-          </Text>
-        </View>
 
         <Searchbar
           placeholder="Buscar por ativo ou tipo..."
           onChangeText={setSearchQuery}
           value={searchQuery}
-          style={styles.searchbar}
+          style={sharedStyles.searchbar}
         />
 
-        <View style={styles.filterContainer}>
+        <View style={sharedStyles.filterContainer}>
           <SegmentedButtons
             value={filterType}
             onValueChange={setFilterType}
             buttons={tiposProvento}
-            style={styles.segmentedButtons}
+            style={sharedStyles.segmentedButtons}
           />
         </View>
 
-        <View style={styles.filterContainer}>
-          <Text variant="bodyMedium" style={styles.filterLabel}>Filtrar por período:</Text>
+        <View style={sharedStyles.filterContainer}>
+          <Text variant="bodyMedium" style={sharedStyles.filterLabel}>Filtrar por período:</Text>
           <SegmentedButtons
             value={dateFilter}
             onValueChange={setDateFilter}
             buttons={filtrosData}
-            style={styles.segmentedButtons}
+            style={sharedStyles.segmentedButtons}
           />
         </View>
 

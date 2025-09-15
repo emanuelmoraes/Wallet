@@ -9,7 +9,6 @@ import {
   Avatar,
   Button,
   Card,
-  Chip,
   Divider,
   FAB,
   IconButton,
@@ -101,6 +100,19 @@ export default function MovimentacoesScreen() {
           return true;
       }
     });
+  };
+
+  // Calculate filtered totals
+  const calculateFilteredTotals = (movimentacoes: Movimentacao[]) => {
+    const totalCompra = movimentacoes
+      .filter(mov => mov.operacao === 'compra' || mov.operacao === 'subscricao')
+      .reduce((total, mov) => total + (mov.quantidade * mov.valorUnitario), 0);
+    
+    const totalVenda = movimentacoes
+      .filter(mov => mov.operacao === 'venda')
+      .reduce((total, mov) => total + (mov.quantidade * mov.valorUnitario), 0);
+
+    return { totalCompra, totalVenda };
   };
 
   // Filter and search movimentacoes
@@ -285,6 +297,8 @@ export default function MovimentacoesScreen() {
     return labels[segmento];
   };
 
+  const { totalCompra, totalVenda } = calculateFilteredTotals(filteredMovimentacoes);
+
   if (loading) {
     return (
       <SafeAreaProvider>
@@ -302,58 +316,49 @@ export default function MovimentacoesScreen() {
     <SafeAreaProvider>
       <SafeAreaView style={styles.container}>
         {/* Header com estatísticas */}
-        <Surface style={styles.statsContainer}>
-          <View style={styles.statItem}>
-            <Text variant="headlineSmall" style={[styles.statValue, { color: '#f44336' }]}>
-              {formatCurrency(stats.totalInvestido)}
-            </Text>
-            <Text variant="bodyMedium" style={styles.statLabel}>Total Investido</Text>
+        <Surface style={sharedStyles.statsContainer}>
+          <View style={sharedStyles.titleSection}>
+            <Title style={sharedStyles.mainTitle}>Minhas movimentações</Title>
           </View>
-          <View style={styles.statItem}>
-            <Text variant="headlineSmall" style={[styles.statValue, { color: '#4CAF50' }]}>
-              {formatCurrency(stats.totalRecebido)}
-            </Text>
-            <Text variant="bodyMedium" style={styles.statLabel}>Total Recebido</Text>
-          </View>
-          <View style={styles.statItem}>
-            <Text variant="headlineSmall" style={[styles.statValue, { color: stats.saldoLiquido >= 0 ? '#4CAF50' : '#f44336' }]}>
-              {formatCurrency(stats.saldoLiquido)}
-            </Text>
-            <Text variant="bodyMedium" style={styles.statLabel}>Saldo Líquido</Text>
+          <View style={sharedStyles.statsRow}>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#f44336' }]}>
+                {formatCurrency(totalCompra)}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Total de compra</Text>
+            </View>
+            <View style={sharedStyles.statItem}>
+              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#4CAF50' }]}>
+                {formatCurrency(totalVenda)}
+              </Text>
+              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Total de venda</Text>
+            </View>
           </View>
         </Surface>
-
-        <View style={styles.header}>
-          <Title>Minhas Movimentações</Title>
-          <Text variant="bodyMedium" style={styles.subtitle}>
-            {movimentacoes.length} {movimentacoes.length === 1 ? 'movimentação' : 'movimentações'} •
-            {filteredMovimentacoes.length} {filteredMovimentacoes.length === 1 ? 'exibida' : 'exibidas'}
-          </Text>
-        </View>
 
         <Searchbar
           placeholder="Buscar por ativo, segmento ou operação..."
           onChangeText={setSearchQuery}
           value={searchQuery}
-          style={styles.searchbar}
+          style={sharedStyles.searchbar}
         />
 
-        <View style={styles.filterContainer}>
+        <View style={sharedStyles.filterContainer}>
           <SegmentedButtons
             value={filterType}
             onValueChange={setFilterType}
             buttons={tiposOperacao}
-            style={styles.segmentedButtons}
+            style={sharedStyles.segmentedButtons}
           />
         </View>
 
-        <View style={styles.filterContainer}>
-          <Text variant="bodyMedium" style={styles.filterLabel}>Filtrar por período:</Text>
+        <View style={sharedStyles.filterContainer}>
+          <Text variant="bodyMedium" style={sharedStyles.filterLabel}>Filtrar por período:</Text>
           <SegmentedButtons
             value={dateFilter}
             onValueChange={setDateFilter}
             buttons={filtrosData}
-            style={styles.segmentedButtons}
+            style={sharedStyles.segmentedButtons}
           />
         </View>
 
@@ -401,53 +406,50 @@ export default function MovimentacoesScreen() {
 
                 <Divider style={styles.divider} />
 
+                {/* Todas as informações em uma única linha horizontal - Segunda linha */}
                 <View style={styles.cardBody}>
-                  <View style={styles.infoRow}>
-                    <Chip
-                      icon={getOperacaoIcon(movimentacao.operacao)}
-                      textStyle={{ color: getOperacaoColor(movimentacao.operacao) }}
-                      style={[styles.chip, { borderColor: getOperacaoColor(movimentacao.operacao) }]}
-                      mode="outlined"
-                    >
-                      {getOperacaoLabel(movimentacao.operacao)}
-                    </Chip>
-                    <Chip
-                      icon={getSegmentoIcon(movimentacao.segmento)}
-                      style={styles.chip}
-                      mode="outlined"
-                    >
-                      {getSegmentoLabel(movimentacao.segmento)}
-                    </Chip>
+                  <View style={styles.fullTableRow}>
+                    <View style={styles.tableItem}>
+                      <Text variant="bodySmall" style={styles.compactLabel}>Operação</Text>
+                      <Text variant="bodySmall" style={{ color: getOperacaoColor(movimentacao.operacao), fontWeight: 'bold' }}>
+                        {getOperacaoLabel(movimentacao.operacao)}
+                      </Text>
+                    </View>
+                    <View style={styles.tableItem}>
+                      <Text variant="bodySmall" style={styles.compactLabel}>Segmento</Text>
+                      <Text variant="bodySmall">{getSegmentoLabel(movimentacao.segmento)}</Text>
+                    </View>
+                    <View style={styles.tableItem}>
+                      <Text variant="bodySmall" style={styles.compactLabel}>Data</Text>
+                      <Text variant="bodySmall">{formatDate(movimentacao.data)}</Text>
+                    </View>
+                    <View style={styles.tableItem}>
+                      <Text variant="bodySmall" style={styles.compactLabel}>Quantidade</Text>
+                      <Text variant="bodySmall">{movimentacao.quantidade.toLocaleString('pt-BR')}</Text>
+                    </View>
+                    <View style={styles.tableItem}>
+                      <Text variant="bodySmall" style={styles.compactLabel}>Valor Unit.</Text>
+                      <Text variant="bodySmall">{formatCurrency(movimentacao.valorUnitario)}</Text>
+                    </View>
+                    <View style={styles.tableItem}>
+                      <Text variant="bodySmall" style={styles.compactLabel}>Valor Total</Text>
+                      <Text 
+                        variant="bodySmall" 
+                        style={{ 
+                          color: getOperacaoColor(movimentacao.operacao),
+                          fontWeight: 'bold'
+                        }}
+                      >
+                        {formatCurrency(movimentacao.valorTotal)}
+                      </Text>
+                    </View>
+                    {movimentacao.observacao && (
+                      <View style={styles.tableItem}>
+                        <Text variant="bodySmall" style={styles.compactLabel}>Observação</Text>
+                        <Text variant="bodySmall" numberOfLines={2}>{movimentacao.observacao}</Text>
+                      </View>
+                    )}
                   </View>
-
-                  <View style={styles.valuesContainer}>
-                    <View style={styles.valueItem}>
-                      <Text variant="bodySmall" style={styles.label}>Data</Text>
-                      <Text variant="titleSmall">{formatDate(movimentacao.data)}</Text>
-                    </View>
-                    <View style={styles.valueItem}>
-                      <Text variant="bodySmall" style={styles.label}>Quantidade</Text>
-                      <Text variant="titleSmall">{movimentacao.quantidade.toLocaleString('pt-BR')}</Text>
-                    </View>
-                    <View style={styles.valueItem}>
-                      <Text variant="bodySmall" style={styles.label}>Valor Unit.</Text>
-                      <Text variant="titleSmall">{formatCurrency(movimentacao.valorUnitario)}</Text>
-                    </View>
-                  </View>
-
-                  <View style={styles.totalContainer}>
-                    <Text variant="bodySmall" style={styles.label}>Valor Total</Text>
-                    <Text variant="titleLarge" style={[styles.totalValue, { color: getOperacaoColor(movimentacao.operacao) }]}>
-                      {formatCurrency(movimentacao.valorTotal)}
-                    </Text>
-                  </View>
-
-                  {movimentacao.observacao && (
-                    <View style={styles.observacoesContainer}>
-                      <Text variant="bodySmall" style={styles.label}>Observações</Text>
-                      <Text variant="bodySmall">{movimentacao.observacao}</Text>
-                    </View>
-                  )}
                 </View>
               </Card.Content>
             </Card>
@@ -614,4 +616,27 @@ const styles = StyleSheet.create({
   ...sharedStyles,
   ...buttonStyles,
   ...screenSpecificStyles,
+  
+  // Estilos específicos para layout de tabela compacta
+  fullTableRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 4,
+  },
+  
+  tableItem: {
+    flex: 1,
+    alignItems: 'center',
+    paddingHorizontal: 1,
+    minWidth: 60,
+  },
+  
+  compactLabel: {
+    opacity: 0.7,
+    marginBottom: 2,
+    textAlign: 'center',
+    fontSize: 9,
+  },
 });
