@@ -1,32 +1,33 @@
+import { cardBackground, primaryGreen, secondaryGreen } from '@/constants/Colors';
 import { useMovimentacoes } from '@/hooks/useMovimentacoes';
 import { buttonStyles, screenSpecificStyles, sharedStyles } from '@/styles/sharedStyles';
 import { CreateMovimentacaoInput, Movimentacao, SegmentoMovimentacao, TipoOperacao } from '@/types/movimentacao';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
-  ActivityIndicator,
-  Avatar,
-  Button,
-  Card,
-  Divider,
-  FAB,
-  IconButton,
-  Modal,
-  Portal,
-  Searchbar,
-  SegmentedButtons,
-  Surface,
-  Text,
-  TextInput,
-  Title,
-  useTheme
+    ActivityIndicator,
+    Avatar,
+    Button,
+    Chip,
+    FAB,
+    Icon,
+    IconButton,
+    Modal,
+    Portal,
+    Searchbar,
+    Text,
+    TextInput,
+    Title,
+    useTheme
 } from 'react-native-paper';
 import { DatePickerModal } from 'react-native-paper-dates';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MovimentacoesScreen() {
   const theme = useTheme();
+  
   const {
     movimentacoes,
     stats,
@@ -260,7 +261,7 @@ export default function MovimentacoesScreen() {
       case 'compra': return '#f44336';
       case 'venda': return '#4CAF50';
       case 'subscricao': return '#2196F3';
-      default: return theme.colors.outline;
+      default: return '#64748B';
     }
   };
 
@@ -314,52 +315,124 @@ export default function MovimentacoesScreen() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        {/* Header com estatísticas */}
-        <Surface style={sharedStyles.statsContainer}>
-          <View style={sharedStyles.titleSection}>
-            <Title style={sharedStyles.mainTitle}>Minhas movimentações</Title>
-          </View>
-          <View style={sharedStyles.statsRow}>
-            <View style={sharedStyles.statItem}>
-              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#f44336' }]}>
+      <SafeAreaView style={sharedStyles.container}>
+        {/* Modern Header */}
+        <LinearGradient
+          colors={[primaryGreen, secondaryGreen]}
+          style={sharedStyles.modernHeader}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Text style={[sharedStyles.headerTitle, { color: '#FFFFFF' }]}>
+            Movimentações
+          </Text>
+          <Text style={[sharedStyles.headerSubtitle, { color: '#FFFFFF90' }]}>
+            Controle suas operações de compra e venda
+          </Text>
+        </LinearGradient>
+
+        {/* Quick Stats Cards */}
+        <View style={styles.quickStatsContainer}>
+          <View style={styles.quickStatsRow}>
+            <View style={styles.quickStatCard}>
+              <Avatar.Icon 
+                size={40} 
+                icon="arrow-down" 
+                style={{ backgroundColor: '#FF5A5A' + '15' }}
+                color={'#FF5A5A'}
+              />
+              <Text style={[styles.quickStatValue, { color: '#FF5A5A' }]}>
                 {formatCurrency(totalCompra)}
               </Text>
-              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Total de compra</Text>
+              <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
+                Total Compra
+              </Text>
             </View>
-            <View style={sharedStyles.statItem}>
-              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#4CAF50' }]}>
+
+            <View style={styles.quickStatCard}>
+              <Avatar.Icon 
+                size={40} 
+                icon="arrow-up" 
+                style={{ backgroundColor: '#4CAF50' + '15' }}
+                color={'#4CAF50'}
+              />
+              <Text style={[styles.quickStatValue, { color: '#4CAF50' }]}>
                 {formatCurrency(totalVenda)}
               </Text>
-              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Total de venda</Text>
+              <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
+                Total Venda
+              </Text>
             </View>
           </View>
-        </Surface>
+        </View>
 
-        <Searchbar
-          placeholder="Buscar por ativo, segmento ou operação..."
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          style={sharedStyles.searchbar}
-        />
-
-        <View style={sharedStyles.filterContainer}>
-          <SegmentedButtons
-            value={filterType}
-            onValueChange={setFilterType}
-            buttons={tiposOperacao}
-            style={sharedStyles.segmentedButtons}
+        {/* Search and Filters */}
+        <View style={sharedStyles.searchContainer}>
+          <Searchbar
+            placeholder="Buscar por ativo, segmento ou operação..."
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={sharedStyles.modernSearchbar}
+            inputStyle={{ color: '#1E293B' }}
+            iconColor={'#64748B'}
+            placeholderTextColor={'#64748B'}
           />
         </View>
 
-        <View style={sharedStyles.filterContainer}>
-          <Text variant="bodyMedium" style={sharedStyles.filterLabel}>Filtrar por período:</Text>
-          <SegmentedButtons
-            value={dateFilter}
-            onValueChange={setDateFilter}
-            buttons={filtrosData}
-            style={sharedStyles.segmentedButtons}
-          />
+        <View style={[styles.filtersContainer, { backgroundColor: cardBackground }]}>
+          <View style={styles.filterSection}>
+            <Text style={[styles.filterLabel, { color: '#64748B' }]}>
+              Tipo de operação
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
+              {tiposOperacao.map((filtro) => (
+                <Chip
+                  key={filtro.value}
+                  mode="flat"
+                  selected={filterType === filtro.value}
+                  onPress={() => setFilterType(filtro.value)}
+                  style={[
+                    styles.filterChip,
+                    {
+                      backgroundColor: filterType === filtro.value ? primaryGreen : cardBackground,
+                    }
+                  ]}
+                  textStyle={{
+                    color: filterType === filtro.value ? '#FFFFFF' : '#1E293B'
+                  }}
+                >
+                  {filtro.label}
+                </Chip>
+              ))}
+            </ScrollView>
+          </View>
+
+          <View style={styles.filterSection}>
+            <Text style={[styles.filterLabel, { color: '#64748B' }]}>
+              Período
+            </Text>
+            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
+              {filtrosData.map((filtro) => (
+                <Chip
+                  key={filtro.value}
+                  mode="flat"
+                  selected={dateFilter === filtro.value}
+                  onPress={() => setDateFilter(filtro.value)}
+                  style={[
+                    styles.filterChip,
+                    {
+                      backgroundColor: dateFilter === filtro.value ? primaryGreen : cardBackground,
+                    }
+                  ]}
+                  textStyle={{
+                    color: dateFilter === filtro.value ? '#FFFFFF' : '#1E293B'
+                  }}
+                >
+                  {filtro.label}
+                </Chip>
+              ))}
+            </ScrollView>
+          </View>
         </View>
 
         <ScrollView
@@ -372,110 +445,122 @@ export default function MovimentacoesScreen() {
           }
         >
           {filteredMovimentacoes.map((movimentacao) => (
-            <Card key={movimentacao.id} style={styles.card}>
-              <Card.Content>
-                <View style={styles.cardHeader}>
-                  <View style={styles.cardTitleRow}>
-                    <Avatar.Icon
-                      size={40}
-                      icon={getOperacaoIcon(movimentacao.operacao)}
-                      style={[styles.avatar, { backgroundColor: getOperacaoColor(movimentacao.operacao) }]}
-                    />
-                    <View style={styles.titleContainer}>
-                      <Text variant="titleMedium">{movimentacao.ativo}</Text>
-                      <Text variant="bodySmall" style={styles.subtitle}>
-                        {getSegmentoLabel(movimentacao.segmento)}
-                      </Text>
-                    </View>
+            <View key={movimentacao.id} style={sharedStyles.modernCard}>
+              <View style={sharedStyles.cardHeader}>
+                <View style={styles.cardIcon}>
+                  <Icon
+                    source={getOperacaoIcon(movimentacao.operacao)}
+                    size={24}
+                    color={getOperacaoColor(movimentacao.operacao)}
+                  />
+                </View>
+                <View style={sharedStyles.cardTitleContainer}>
+                  <Text variant="titleMedium" style={sharedStyles.cardTitle}>
+                    {movimentacao.ativo}
+                  </Text>
+                  <Text variant="bodySmall" style={sharedStyles.cardSubtitle}>
+                    {getSegmentoLabel(movimentacao.segmento)}
+                  </Text>
+                </View>
+                <View style={sharedStyles.actions}>
+                  <IconButton
+                    icon="pencil"
+                    size={20}
+                    iconColor={primaryGreen}
+                    onPress={() => handleOpenModal(movimentacao)}
+                  />
+                  <IconButton
+                    icon="delete"
+                    size={20}
+                    iconColor={'#FF5A5A'}
+                    onPress={() => handleDeleteMovimentacao(movimentacao.id)}
+                    disabled={deleting}
+                  />
+                </View>
+              </View>
+
+              <View style={sharedStyles.modernDivider} />
+
+              <View style={styles.movimentacaoDetails}>
+                <View style={styles.detailRow}>
+                  <View style={styles.detailItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Operação</Text>
+                    <Text variant="bodyMedium" style={[sharedStyles.valueAmount, { color: getOperacaoColor(movimentacao.operacao) }]}>
+                      {getOperacaoLabel(movimentacao.operacao)}
+                    </Text>
                   </View>
-                  <View style={styles.actions}>
-                    <IconButton
-                      icon="pencil"
-                      size={20}
-                      onPress={() => handleOpenModal(movimentacao)}
-                    />
-                    <IconButton
-                      icon="delete"
-                      size={20}
-                      iconColor={theme.colors.error}
-                      onPress={() => handleDeleteMovimentacao(movimentacao.id)}
-                      disabled={deleting}
-                    />
+                  <View style={styles.detailItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Data</Text>
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {formatDate(movimentacao.data)}
+                    </Text>
                   </View>
                 </View>
 
-                <Divider style={styles.divider} />
-
-                {/* Todas as informações em uma única linha horizontal - Segunda linha */}
-                <View style={styles.cardBody}>
-                  <View style={styles.fullTableRow}>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Operação</Text>
-                      <Text variant="bodySmall" style={{ color: getOperacaoColor(movimentacao.operacao), fontWeight: 'bold' }}>
-                        {getOperacaoLabel(movimentacao.operacao)}
-                      </Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Segmento</Text>
-                      <Text variant="bodySmall">{getSegmentoLabel(movimentacao.segmento)}</Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Data</Text>
-                      <Text variant="bodySmall">{formatDate(movimentacao.data)}</Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Quantidade</Text>
-                      <Text variant="bodySmall">{movimentacao.quantidade.toLocaleString('pt-BR')}</Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Valor Unit.</Text>
-                      <Text variant="bodySmall">{formatCurrency(movimentacao.valorUnitario)}</Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Valor Total</Text>
-                      <Text 
-                        variant="bodySmall" 
-                        style={{ 
-                          color: getOperacaoColor(movimentacao.operacao),
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {formatCurrency(movimentacao.valorTotal)}
-                      </Text>
-                    </View>
-                    {movimentacao.observacao && (
-                      <View style={styles.tableItem}>
-                        <Text variant="bodySmall" style={styles.compactLabel}>Observação</Text>
-                        <Text variant="bodySmall" numberOfLines={2}>{movimentacao.observacao}</Text>
-                      </View>
-                    )}
+                <View style={styles.detailRow}>
+                  <View style={styles.detailItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Quantidade</Text>
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {movimentacao.quantidade.toLocaleString('pt-BR')}
+                    </Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Valor Unit.</Text>
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {formatCurrency(movimentacao.valorUnitario)}
+                    </Text>
                   </View>
                 </View>
-              </Card.Content>
-            </Card>
+
+                <View style={styles.totalRow}>
+                  <Text variant="bodySmall" style={sharedStyles.valueLabel}>Valor Total</Text>
+                  <Text variant="titleMedium" style={[sharedStyles.valueAmount, { 
+                    color: getOperacaoColor(movimentacao.operacao),
+                    fontWeight: 'bold'
+                  }]}>
+                    {formatCurrency(movimentacao.valorTotal)}
+                  </Text>
+                </View>
+
+                {movimentacao.observacao && (
+                  <View style={styles.observacaoContainer}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Observação</Text>
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {movimentacao.observacao}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
           ))}
 
           {filteredMovimentacoes.length === 0 && (
-            <Surface style={styles.emptyState}>
-              <Text variant="titleMedium" style={styles.emptyTitle}>
+            <View style={sharedStyles.emptyState}>
+              <Icon
+                source={searchQuery ? 'magnify' : 'chart-line-variant'}
+                size={48}
+                color={'#64748B'}
+              />
+              <Text variant="titleMedium" style={[sharedStyles.valueAmount, { marginTop: 16, textAlign: 'center' }]}>
                 {searchQuery ? 'Nenhuma movimentação encontrada' : 'Nenhuma movimentação cadastrada'}
               </Text>
-              <Text variant="bodyMedium" style={styles.emptySubtitle}>
+              <Text variant="bodyMedium" style={[sharedStyles.valueLabel, { textAlign: 'center', marginTop: 8 }]}>
                 {searchQuery
                   ? 'Tente ajustar sua busca ou filtros'
                   : 'Comece adicionando sua primeira movimentação'
                 }
               </Text>
-            </Surface>
+            </View>
           )}
         </ScrollView>
 
         <FAB
           icon="plus"
-          style={styles.fab}
+          style={[sharedStyles.modernFab, { backgroundColor: primaryGreen }]}
           onPress={() => handleOpenModal()}
           loading={saving}
           disabled={saving}
+          color="#FFFFFF"
         />
 
         <Portal>
@@ -488,7 +573,7 @@ export default function MovimentacoesScreen() {
               showsVerticalScrollIndicator={false}
               contentContainerStyle={styles.modalContent}
             >
-              <Title style={{ marginBottom: 16, color: theme.colors.primary }}
+              <Title style={{ marginBottom: 16, color: primaryGreen }}
               >{editingId ? 'Editar Movimentação' : 'Nova Movimentação'}</Title>
 
               <TextInput
@@ -591,6 +676,7 @@ export default function MovimentacoesScreen() {
                   mode="outlined"
                   onPress={handleCloseModal}
                   style={styles.modalButton}
+                  textColor={'#1E293B'}
                 >
                   Cancelar
                 </Button>
@@ -599,7 +685,8 @@ export default function MovimentacoesScreen() {
                   onPress={handleSaveMovimentacao}
                   loading={saving}
                   disabled={saving || !formData.ativo || !formData.quantidade || !formData.valorUnitario}
-                  style={styles.modalButton}
+                  style={[styles.modalButton, { backgroundColor: primaryGreen }]}
+                  textColor="#FFFFFF"
                 >
                   {editingId ? 'Atualizar' : 'Salvar'}
                 </Button>
@@ -616,6 +703,102 @@ const styles = StyleSheet.create({
   ...sharedStyles,
   ...buttonStyles,
   ...screenSpecificStyles,
+  
+  // Quick Stats Styles
+  quickStatsContainer: {
+    backgroundColor: '#F8FAFB',
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+
+  quickStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+
+  quickStatCard: {
+    flex: 1,
+    backgroundColor: cardBackground,
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  quickStatValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+
+  quickStatLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  // Filter Styles
+  filtersContainer: {
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+
+  filterSection: {
+    marginBottom: 16,
+  },
+
+  filterLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+
+  filterChips: {
+    flexDirection: 'row',
+    gap: 8,
+    paddingHorizontal: 4,
+  },
+
+  filterChip: {
+    marginRight: 8,
+  },
+
+  // Estilos para o layout modernizado
+  movimentacaoDetails: {
+    gap: 16,
+  },
+
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+
+  detailItem: {
+    flex: 1,
+  },
+
+  totalRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
+
+  observacaoContainer: {
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+  },
   
   // Estilos específicos para layout de tabela compacta
   fullTableRow: {

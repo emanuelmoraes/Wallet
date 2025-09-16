@@ -1,25 +1,28 @@
+import { Colors } from '@/constants/Colors';
 import { useAtivos } from '@/hooks/useAtivos';
+import { useColorScheme } from '@/hooks/useColorScheme';
 import { sharedStyles } from '@/styles/sharedStyles';
+import { LinearGradient } from 'expo-linear-gradient';
 import React from 'react';
-import { ScrollView, StyleSheet, View } from 'react-native';
+import { Dimensions, ScrollView, StyleSheet, View } from 'react-native';
 import {
   ActivityIndicator,
   Avatar,
   Button,
-  Card,
-  Chip,
   Divider,
-  List,
   ProgressBar,
-  Surface,
   Text,
-  Title,
   useTheme
 } from 'react-native-paper';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
+const { width } = Dimensions.get('window');
+
 export default function PortfolioScreen() {
   const theme = useTheme();
+  const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
+  
   const {
     ativos,
     portfolioStats,
@@ -31,6 +34,7 @@ export default function PortfolioScreen() {
   } = useAtivos();
 
   const isPositive = (value: number) => value >= 0;
+  
   const formatCurrency = (value: number) => {
     return value.toLocaleString('pt-BR', { 
       style: 'currency', 
@@ -38,6 +42,10 @@ export default function PortfolioScreen() {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2 
     });
+  };
+
+  const formatPercentage = (value: number) => {
+    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
   };
 
   const getTipoIcon = (tipo: string) => {
@@ -52,21 +60,23 @@ export default function PortfolioScreen() {
 
   const getTipoColor = (tipo: string) => {
     switch (tipo) {
-      case 'acao': return theme.colors.primary;
-      case 'fii': return theme.colors.secondary;
+      case 'acao': return colors.primary;
+      case 'fii': return colors.secondary;
       case 'renda_fixa': return '#4CAF50';
       case 'cripto': return '#FF9800';
-      default: return theme.colors.outline;
+      default: return colors.icon;
     }
   };
 
   if (loading) {
     return (
       <SafeAreaProvider>
-        <SafeAreaView style={styles.container}>
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" />
-            <Text style={styles.loadingText}>Carregando portfólio...</Text>
+        <SafeAreaView style={[sharedStyles.container, { backgroundColor: colors.background }]}>
+          <View style={sharedStyles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.primary} />
+            <Text style={[sharedStyles.loadingText, { color: colors.textSecondary }]}>
+              Carregando portfólio...
+            </Text>
           </View>
         </SafeAreaView>
       </SafeAreaProvider>
@@ -75,242 +85,274 @@ export default function PortfolioScreen() {
 
   return (
     <SafeAreaProvider>
-      <SafeAreaView style={styles.container}>
-        {/* Header com estatísticas */}
-        <Surface style={sharedStyles.statsContainer}>
-          <View style={sharedStyles.titleSection}>
-            <Title style={sharedStyles.mainTitle}>Meu Portfolio</Title>
-          </View>
-          <View style={sharedStyles.statsRow}>
-            <View style={sharedStyles.statItem}>
-              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#2196F3' }]}>
+      <SafeAreaView style={[sharedStyles.container, { backgroundColor: colors.background }]}>
+        {/* Modern Header with Balance */}
+        <LinearGradient
+          colors={[colors.gradientStart, colors.gradientEnd]}
+          style={styles.gradientHeader}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <View style={styles.headerContent}>
+            <Text style={styles.welcomeText}>Bem-vindo ao seu</Text>
+            <Text style={styles.portfolioTitle}>Portfolio</Text>
+            <View style={styles.balanceContainer}>
+              <Text style={styles.balanceLabel}>Valor Total</Text>
+              <Text style={styles.balanceValue}>
                 {portfolioStats ? formatCurrency(portfolioStats.valorTotal) : 'R$ 0,00'}
               </Text>
-              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Valor Total</Text>
-            </View>
-            <View style={sharedStyles.statItem}>
-              <Text variant="headlineSmall" style={[sharedStyles.statValue, { 
-                color: portfolioStats && isPositive(portfolioStats.rendimentoTotal) ? '#4CAF50' : '#f44336' 
-              }]}>
-                {portfolioStats ? formatCurrency(portfolioStats.rendimentoTotal) : 'R$ 0,00'}
-              </Text>
-              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Rendimento</Text>
-            </View>
-            <View style={sharedStyles.statItem}>
-              <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#FF9800' }]}>
-                {ativos.length}
-              </Text>
-              <Text variant="bodyMedium" style={sharedStyles.statLabel}>Ativos</Text>
+              {portfolioStats && (
+                <View style={styles.returnContainer}>
+                  <Text style={[
+                    styles.returnText,
+                    { color: isPositive(portfolioStats.rendimentoTotal) ? '#FFFFFF' : '#FFE5E5' }
+                  ]}>
+                    {formatPercentage(portfolioStats.rendimentoPercentual)}
+                  </Text>
+                  <Text style={styles.returnValue}>
+                    {formatCurrency(portfolioStats.rendimentoTotal)}
+                  </Text>
+                </View>
+              )}
             </View>
           </View>
-        </Surface>
+        </LinearGradient>
+
+        {/* Quick Stats Cards */}
+        <View style={styles.quickStatsContainer}>
+          <View style={styles.quickStatsRow}>
+            <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
+              <Avatar.Icon 
+                size={40} 
+                icon="chart-line" 
+                style={{ backgroundColor: colors.primary + '15' }}
+                color={colors.primary}
+              />
+              <Text style={[styles.quickStatValue, { color: colors.primary }]}>
+                {portfolioStats ? portfolioStats.valorTotal.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '0'}
+              </Text>
+              <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>Investido</Text>
+            </View>
+            
+            <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
+              <Avatar.Icon 
+                size={40} 
+                icon="trending-up" 
+                style={{ backgroundColor: colors.success + '15' }}
+                color={colors.success}
+              />
+              <Text style={[styles.quickStatValue, { color: colors.success }]}>
+                {portfolioStats ? portfolioStats.rendimentoTotal.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '0'}
+              </Text>
+              <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>Retorno</Text>
+            </View>
+            
+            <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
+              <Avatar.Icon 
+                size={40} 
+                icon="briefcase" 
+                style={{ backgroundColor: colors.warning + '15' }}
+                color={colors.warning}
+              />
+              <Text style={[styles.quickStatValue, { color: colors.warning }]}>
+                {ativos.length}
+              </Text>
+              <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>Ativos</Text>
+            </View>
+          </View>
+        </View>
 
         <ScrollView style={sharedStyles.scrollView} showsVerticalScrollIndicator={false}>
-          {/* Card Resumo Principal */}
-          <Card style={styles.summaryCard} mode="elevated">
-            <Card.Content>
-              <View style={styles.summaryHeader}>
-                <Avatar.Icon 
-                  size={48} 
-                  icon="wallet" 
-                  style={{ backgroundColor: theme.colors.primaryContainer }}
-                />
-                <View style={styles.summaryInfo}>
-                  <Text variant="labelLarge" style={styles.summaryLabel}>
-                    Valor Total da Carteira
-                  </Text>
-                  <Title style={[styles.summaryValue, { color: theme.colors.primary }]}>
-                    {portfolioStats ? formatCurrency(portfolioStats.valorTotal) : 'R$ 0,00'}
-                  </Title>
-                </View>
-              </View>
-
-              <Divider style={styles.divider} />
-
-              <View style={styles.summaryMetrics}>
-                <View style={styles.metricItem}>
-                  <Avatar.Icon 
-                    size={32} 
-                    icon={portfolioStats && isPositive(portfolioStats.rendimentoTotal) ? "trending-up" : "trending-down"}
-                    style={{ 
-                      backgroundColor: portfolioStats && isPositive(portfolioStats.rendimentoTotal) 
-                        ? theme.colors.secondary + '20' 
-                        : theme.colors.error + '20' 
-                    }}
-                  />
-                  <View style={styles.metricDetails}>
-                    <Text variant="labelMedium" style={styles.metricLabel}>
-                      Rendimento Total
-                    </Text>
-                    <Text 
-                      variant="titleMedium" 
-                      style={[
-                        styles.metricValue,
-                        { 
-                          color: portfolioStats && isPositive(portfolioStats.rendimentoTotal) 
-                            ? theme.colors.secondary 
-                            : theme.colors.error 
-                        }
-                      ]}
-                    >
-                      {portfolioStats ? `${formatCurrency(portfolioStats.rendimentoTotal)} (${portfolioStats.rendimentoPercentual >= 0 ? '+' : ''}${portfolioStats.rendimentoPercentual.toFixed(2)}%)` : 'R$ 0,00 (0%)'}
-                    </Text>
-                  </View>
-                </View>
-
-                <View style={styles.metricItem}>
-                  <Avatar.Icon 
-                    size={32} 
-                    icon="clipboard-list"
-                    style={{ backgroundColor: theme.colors.tertiaryContainer }}
-                  />
-                  <View style={styles.metricDetails}>
-                    <Text variant="labelMedium" style={styles.metricLabel}>
-                      Total de Ativos
-                    </Text>
-                    <Text variant="titleMedium" style={styles.metricValue}>
-                      {ativos.length} {ativos.length === 1 ? 'ativo' : 'ativos'}
-                    </Text>
-                  </View>
-                </View>
-              </View>
-            </Card.Content>
-          </Card>
-
-          {/* Distribuição por Tipo */}
-          <Card style={styles.card} mode="elevated">
-            <Card.Content>
-              <View style={styles.cardHeader}>
+          {/* Portfolio Summary Card */}
+          <View style={[sharedStyles.modernCard, { backgroundColor: colors.surface }]}>
+            <View style={sharedStyles.cardHeader}>
+              <View style={[sharedStyles.cardIcon, { backgroundColor: colors.primaryContainer }]}>
                 <Avatar.Icon 
                   size={32} 
-                  icon="chart-pie" 
-                  style={{ backgroundColor: theme.colors.primaryContainer }}
+                  icon="wallet" 
+                  style={{ backgroundColor: 'transparent' }}
+                  color={colors.primary}
                 />
-                <Title style={styles.cardTitle}>Distribuição por Tipo</Title>
               </View>
-              
-              {distribuicaoTipos.map((item, index) => (
-                <View key={item.tipo} style={styles.distributionItem}>
-                  <List.Item
-                    title={item.tipo.charAt(0).toUpperCase() + item.tipo.slice(1)}
-                    description={`${formatCurrency(item.valor)} • ${item.percentual.toFixed(1)}%`}
-                    left={() => (
-                      <Avatar.Icon 
-                        size={40} 
-                        icon={getTipoIcon(item.tipo)}
-                        style={{ backgroundColor: getTipoColor(item.tipo) + '20' }}
-                      />
-                    )}
-                    right={() => (
-                      <Chip 
-                        mode="outlined" 
-                        compact
-                        style={{ backgroundColor: getTipoColor(item.tipo) + '10' }}
-                        textStyle={{ color: getTipoColor(item.tipo), fontSize: 12 }}
-                      >
-                        {item.percentual.toFixed(1)}%
-                      </Chip>
-                    )}
+              <View style={sharedStyles.cardTitleContainer}>
+                <Text style={[sharedStyles.cardTitle, { color: colors.text }]}>
+                  Resumo do Portfolio
+                </Text>
+                <Text style={[sharedStyles.cardSubtitle, { color: colors.textSecondary }]}>
+                  Visão geral dos seus investimentos
+                </Text>
+              </View>
+            </View>
+
+            <View style={sharedStyles.modernDivider} />
+
+            <View style={styles.metricsGrid}>
+              <View style={styles.metricItem}>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                  Rendimento Total
+                </Text>
+                <Text style={[
+                  styles.metricValue,
+                  { 
+                    color: portfolioStats && isPositive(portfolioStats.rendimentoTotal) 
+                      ? colors.success 
+                      : colors.error 
+                  }
+                ]}>
+                  {portfolioStats ? formatCurrency(portfolioStats.rendimentoTotal) : 'R$ 0,00'}
+                </Text>
+              </View>
+
+              <View style={styles.metricItem}>
+                <Text style={[styles.metricLabel, { color: colors.textSecondary }]}>
+                  % Rendimento
+                </Text>
+                <Text style={[
+                  styles.metricValue,
+                  { 
+                    color: portfolioStats && isPositive(portfolioStats.rendimentoPercentual) 
+                      ? colors.success 
+                      : colors.error 
+                  }
+                ]}>
+                  {portfolioStats ? formatPercentage(portfolioStats.rendimentoPercentual) : '0%'}
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Distribution by Type */}
+          {distribuicaoTipos && distribuicaoTipos.length > 0 && (
+            <View style={[sharedStyles.modernCard, { backgroundColor: colors.surface }]}>
+              <View style={sharedStyles.cardHeader}>
+                <View style={[sharedStyles.cardIcon, { backgroundColor: colors.secondaryContainer }]}>
+                  <Avatar.Icon 
+                    size={32} 
+                    icon="chart-donut" 
+                    style={{ backgroundColor: 'transparent' }}
+                    color={colors.secondary}
                   />
+                </View>
+                <View style={sharedStyles.cardTitleContainer}>
+                  <Text style={[sharedStyles.cardTitle, { color: colors.text }]}>
+                    Distribuição por Tipo
+                  </Text>
+                  <Text style={[sharedStyles.cardSubtitle, { color: colors.textSecondary }]}>
+                    Diversificação da carteira
+                  </Text>
+                </View>
+              </View>
+
+              <View style={sharedStyles.modernDivider} />
+
+              {distribuicaoTipos.map((item, index) => (
+                <View key={index} style={styles.distributionItem}>
+                  <View style={styles.distributionHeader}>
+                    <Avatar.Icon 
+                      size={32} 
+                      icon={getTipoIcon(item.tipo)} 
+                      style={{ backgroundColor: getTipoColor(item.tipo) + '15' }}
+                      color={getTipoColor(item.tipo)}
+                    />
+                    <View style={styles.distributionInfo}>
+                      <Text style={[styles.distributionName, { color: colors.text }]}>
+                        {item.tipo.charAt(0).toUpperCase() + item.tipo.slice(1)}
+                      </Text>
+                      <Text style={[styles.distributionValue, { color: colors.textSecondary }]}>
+                        {formatCurrency(item.valor)} ({item.percentual.toFixed(1)}%)
+                      </Text>
+                    </View>
+                  </View>
                   <ProgressBar 
                     progress={item.percentual / 100} 
                     color={getTipoColor(item.tipo)}
                     style={styles.progressBar}
                   />
-                  {index < distribuicaoTipos.length - 1 && <Divider style={styles.itemDivider} />}
+                  {index < distribuicaoTipos.length - 1 && (
+                    <Divider style={sharedStyles.modernDivider} />
+                  )}
                 </View>
               ))}
+            </View>
+          )}
 
-              {distribuicaoTipos.length === 0 && (
-                <View style={styles.emptyState}>
-                  <Text variant="bodyMedium" style={styles.emptyText}>
-                    Nenhum ativo cadastrado
-                  </Text>
-                </View>
-              )}
-            </Card.Content>
-          </Card>
-
-          {/* Top Ativos */}
-          <Card style={styles.card} mode="elevated">
-            <Card.Content>
-              <View style={styles.cardHeader}>
-                <Avatar.Icon 
-                  size={32} 
-                  icon="star" 
-                  style={{ backgroundColor: theme.colors.tertiaryContainer }}
-                />
-                <Title style={styles.cardTitle}>Principais Ativos</Title>
-              </View>
-              
-              {topAtivos.map((ativo, index) => (
-                <View key={ativo.id}>
-                  <List.Item
-                    title={ativo.ticker}
-                    description={ativo.nome}
-                    left={() => (
-                      <View style={styles.rankContainer}>
-                        <Avatar.Text 
-                          size={32} 
-                          label={`${index + 1}`}
-                          style={{ backgroundColor: theme.colors.surfaceVariant }}
-                        />
-                      </View>
-                    )}
-                    right={() => (
-                      <View style={styles.ativoValues}>
-                        <Text variant="titleSmall" style={styles.ativoValor}>
-                          {formatCurrency(ativo.valorTotal)}
-                        </Text>
-                        <Chip 
-                          icon={getTipoIcon(ativo.tipo)}
-                          mode="outlined" 
-                          compact
-                          style={{ 
-                            backgroundColor: getTipoColor(ativo.tipo) + '10'
-                          }}
-                          textStyle={{ 
-                            color: getTipoColor(ativo.tipo),
-                            fontSize: 10 
-                          }}
-                        >
-                          {ativo.tipo.toUpperCase()}
-                        </Chip>
-                      </View>
-                    )}
+          {/* Top Assets */}
+          {topAtivos && topAtivos.length > 0 && (
+            <View style={[sharedStyles.modernCard, { backgroundColor: colors.surface }]}>
+              <View style={sharedStyles.cardHeader}>
+                <View style={[sharedStyles.cardIcon, { backgroundColor: colors.warning + '15' }]}>
+                  <Avatar.Icon 
+                    size={32} 
+                    icon="star" 
+                    style={{ backgroundColor: 'transparent' }}
+                    color={colors.warning}
                   />
-                  {index < topAtivos.length - 1 && <Divider style={styles.itemDivider} />}
                 </View>
-              ))}
-
-              {topAtivos.length === 0 && (
-                <View style={styles.emptyState}>
-                  <Text variant="bodyMedium" style={styles.emptyText}>
-                    Nenhum ativo para exibir
+                <View style={sharedStyles.cardTitleContainer}>
+                  <Text style={[sharedStyles.cardTitle, { color: colors.text }]}>
+                    Principais Ativos
+                  </Text>
+                  <Text style={[sharedStyles.cardSubtitle, { color: colors.textSecondary }]}>
+                    Maiores posições da carteira
                   </Text>
                 </View>
-              )}
-            </Card.Content>
-          </Card>
-
-          {/* Cards de Ações Rápidas */}
-          <Card style={styles.card} mode="elevated">
-            <Card.Content>
-              <Title style={styles.cardTitle}>Ações Rápidas</Title>
-              <View style={styles.actionsContainer}>
-                <Button 
-                  mode="contained" 
-                  icon="sync"
-                  style={styles.actionButton}
-                  onPress={refreshData}
-                  loading={loading}
-                  disabled={loading}
-                >
-                  Atualizar
-                </Button>
               </View>
-            </Card.Content>
-          </Card>
+
+              <View style={sharedStyles.modernDivider} />
+
+              {topAtivos.map((ativo, index) => (
+                <View key={ativo.id} style={styles.assetItem}>
+                  <View style={styles.assetHeader}>
+                    <View style={styles.assetRank}>
+                      <Text style={[styles.rankNumber, { color: colors.primary }]}>
+                        {index + 1}
+                      </Text>
+                    </View>
+                    <View style={styles.assetInfo}>
+                      <Text style={[styles.assetName, { color: colors.text }]}>
+                        {ativo.ticker}
+                      </Text>
+                      <Text style={[styles.assetType, { color: colors.textSecondary }]}>
+                        {ativo.nome}
+                      </Text>
+                    </View>
+                    <View style={styles.assetValues}>
+                      <Text style={[styles.assetValue, { color: colors.text }]}>
+                        {formatCurrency(ativo.valorTotal)}
+                      </Text>
+                      <Text style={[
+                        styles.assetReturn,
+                        { 
+                          color: isPositive(ativo.valorTotal - (ativo.preco * ativo.quantidade)) 
+                            ? colors.success 
+                            : colors.error 
+                        }
+                      ]}>
+                        {formatPercentage(((ativo.valorTotal - (ativo.preco * ativo.quantidade)) / (ativo.preco * ativo.quantidade)) * 100)}
+                      </Text>
+                    </View>
+                  </View>
+                  {index < topAtivos.length - 1 && (
+                    <Divider style={sharedStyles.modernDivider} />
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+
+          {/* Refresh Button */}
+          <View style={styles.actionsContainer}>
+            <Button 
+              mode="contained" 
+              onPress={refreshData}
+              style={[styles.refreshButton, { backgroundColor: colors.primary }]}
+              contentStyle={styles.buttonContent}
+            >
+              Atualizar Dados
+            </Button>
+          </View>
+
+          <View style={sharedStyles.largeSpacer} />
         </ScrollView>
       </SafeAreaView>
     </SafeAreaProvider>
@@ -318,122 +360,223 @@ export default function PortfolioScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
+  // ==================== GRADIENT HEADER ====================
+  gradientHeader: {
+    paddingHorizontal: 20,
+    paddingTop: 20,
+    paddingBottom: 30,
+    borderBottomLeftRadius: 24,
+    borderBottomRightRadius: 24,
   },
-  header: {
-    padding: 20,
-    paddingTop: 10,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: 'bold',
-  },
-  subtitle: {
-    marginTop: 4,
-    opacity: 0.7,
-  },
-  scrollView: {
-    flex: 1,
-    padding: 16,
-  },
-  summaryCard: {
-    marginBottom: 16,
-  },
-  summaryHeader: {
-    flexDirection: 'row',
+
+  headerContent: {
     alignItems: 'center',
-    marginBottom: 16,
   },
-  summaryInfo: {
-    marginLeft: 16,
-    flex: 1,
-  },
-  summaryLabel: {
-    opacity: 0.7,
+
+  welcomeText: {
+    fontSize: 16,
+    color: '#FFFFFF',
+    opacity: 0.9,
     marginBottom: 4,
   },
-  summaryValue: {
-    fontSize: 28,
-    fontWeight: 'bold',
+
+  portfolioTitle: {
+    fontSize: 32,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 20,
   },
-  divider: {
-    marginVertical: 16,
-  },
-  summaryMetrics: {
-    gap: 16,
-  },
-  metricItem: {
-    flexDirection: 'row',
+
+  balanceContainer: {
     alignItems: 'center',
   },
-  metricDetails: {
-    marginLeft: 12,
-    flex: 1,
-  },
-  metricLabel: {
-    opacity: 0.7,
-    marginBottom: 2,
-  },
-  metricValue: {
-    fontWeight: '600',
-  },
-  card: {
-    marginBottom: 16,
-  },
-  cardHeader: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-  cardTitle: {
-    marginLeft: 12,
-    fontSize: 18,
-  },
-  distributionItem: {
+
+  balanceLabel: {
+    fontSize: 14,
+    color: '#FFFFFF',
+    opacity: 0.8,
     marginBottom: 8,
   },
-  progressBar: {
-    marginHorizontal: 16,
-    marginTop: 4,
-    height: 4,
+
+  balanceValue: {
+    fontSize: 36,
+    fontWeight: '700',
+    color: '#FFFFFF',
+    marginBottom: 12,
   },
-  itemDivider: {
-    marginTop: 12,
-  },
-  rankContainer: {
+
+  returnContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 12,
   },
-  ativoValues: {
-    alignItems: 'flex-end',
-    gap: 4,
-  },
-  ativoValor: {
+
+  returnText: {
+    fontSize: 16,
     fontWeight: '600',
   },
-  actionsContainer: {
+
+  returnValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    color: '#FFFFFF',
+    opacity: 0.9,
+  },
+
+  // ==================== QUICK STATS ====================
+  quickStatsContainer: {
+    paddingHorizontal: 20,
+    marginTop: -20,
+    marginBottom: 20,
+  },
+
+  quickStatsRow: {
     flexDirection: 'row',
     gap: 12,
-    marginTop: 12,
   },
-  actionButton: {
+
+  quickStatCard: {
     flex: 1,
+    padding: 16,
+    borderRadius: 16,
+    alignItems: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
   },
-  loadingContainer: {
+
+  quickStatValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+
+  quickStatLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+  },
+
+  // ==================== METRICS GRID ====================
+  metricsGrid: {
+    flexDirection: 'row',
+    gap: 16,
+  },
+
+  metricItem: {
     flex: 1,
+    alignItems: 'center',
+  },
+
+  metricLabel: {
+    fontSize: 14,
+    fontWeight: '500',
+    marginBottom: 8,
+  },
+
+  metricValue: {
+    fontSize: 18,
+    fontWeight: '700',
+  },
+
+  // ==================== DISTRIBUTION ====================
+  distributionItem: {
+    marginBottom: 16,
+  },
+
+  distributionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+
+  distributionInfo: {
+    flex: 1,
+    marginLeft: 12,
+  },
+
+  distributionName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+
+  distributionValue: {
+    fontSize: 14,
+  },
+
+  progressBar: {
+    height: 8,
+    borderRadius: 4,
+  },
+
+  // ==================== ASSETS ====================
+  assetItem: {
+    marginBottom: 16,
+  },
+
+  assetHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+
+  assetRank: {
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#00D4AA15',
     justifyContent: 'center',
     alignItems: 'center',
+    marginRight: 12,
   },
-  loadingText: {
-    marginTop: 16,
+
+  rankNumber: {
+    fontSize: 14,
+    fontWeight: '700',
   },
-  emptyState: {
-    padding: 20,
-    alignItems: 'center',
+
+  assetInfo: {
+    flex: 1,
   },
-  emptyText: {
-    opacity: 0.7,
-    textAlign: 'center',
+
+  assetName: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+
+  assetType: {
+    fontSize: 12,
+  },
+
+  assetValues: {
+    alignItems: 'flex-end',
+  },
+
+  assetValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginBottom: 4,
+  },
+
+  assetReturn: {
+    fontSize: 14,
+    fontWeight: '500',
+  },
+
+  // ==================== ACTIONS ====================
+  actionsContainer: {
+    paddingHorizontal: 20,
+    marginTop: 20,
+  },
+
+  refreshButton: {
+    borderRadius: 12,
+  },
+
+  buttonContent: {
+    paddingVertical: 8,
   },
 });

@@ -10,27 +10,54 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const colors = Colors[colorScheme ?? 'light'];
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: colors.primary,
+        tabBarInactiveTintColor: colors.tabIconDefault,
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
+        tabBarStyle: {
+          backgroundColor: colors.tabBackground,
+          borderTopWidth: 0,
+          height: Platform.OS === 'ios' ? 88 : 60,
+          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
+          paddingTop: 8,
+          shadowColor: colors.shadow,
+          shadowOffset: { width: 0, height: -2 },
+          shadowOpacity: colors.shadowOpacity,
+          shadowRadius: 8,
+          elevation: 8,
+          ...Platform.select({
+            ios: {
+              position: 'absolute',
+            },
+            default: {},
+          }),
+        },
+        tabBarLabelStyle: {
+          fontSize: 12,
+          fontWeight: '600',
+          marginTop: 4,
+        },
+        tabBarIconStyle: {
+          marginBottom: 2,
+        },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Portfolio',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="chart.pie.fill" color={color} />,
+          tabBarIcon: ({ color }) => (
+            <IconSymbol 
+              size={24} 
+              name="chart.pie.fill" 
+              color={color} 
+            />
+          ),
         }}
       />
       <Tabs.Screen
@@ -38,7 +65,11 @@ export default function TabLayout() {
         options={{
           title: 'Ativos',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="list.bullet.clipboard.fill" color={color} />
+            <IconSymbol 
+              size={24} 
+              name="list.bullet.clipboard.fill" 
+              color={color} 
+            />
           ),
         }}
       />
@@ -47,7 +78,11 @@ export default function TabLayout() {
         options={{
           title: 'Proventos',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="dollarsign.circle.fill" color={color} />
+            <IconSymbol 
+              size={24} 
+              name="dollarsign.circle.fill" 
+              color={color} 
+            />
           ),
         }}
       />
@@ -56,7 +91,11 @@ export default function TabLayout() {
         options={{
           title: 'Movimentações',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="arrow.left.arrow.right.circle.fill" color={color} />
+            <IconSymbol 
+              size={24} 
+              name="arrow.left.arrow.right.circle.fill" 
+              color={color} 
+            />
           ),
         }}
       />
@@ -65,7 +104,11 @@ export default function TabLayout() {
         options={{
           title: 'Rentabilidade',
           tabBarIcon: ({ color }) => (
-            <IconSymbol size={28} name="chart.line.uptrend.xyaxis" color={color} />
+            <IconSymbol 
+              size={24} 
+              name="chart.line.uptrend.xyaxis.circle.fill" 
+              color={color} 
+            />
           ),
         }}
       />

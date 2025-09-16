@@ -1,29 +1,28 @@
+import { cardBackground, primaryGreen, secondaryGreen } from '@/constants/Colors';
 import { useRentabilidade } from '@/hooks/useRentabilidade';
 import { buttonStyles, screenSpecificStyles, sharedStyles } from '@/styles/sharedStyles';
 import { PrecoAtualInput, RentabilidadeData } from '@/types/rentabilidade';
+import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
   ActivityIndicator,
-  Avatar,
   Button,
-  Card,
-  Divider,
+  Icon,
   IconButton,
   Modal,
   Portal,
   Searchbar,
-  Surface,
   Text,
   TextInput,
-  Title,
   useTheme
 } from 'react-native-paper';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RentabilidadeScreen() {
   const theme = useTheme();
+  
   const {
     rentabilidadeData,
     stats,
@@ -151,8 +150,10 @@ export default function RentabilidadeScreen() {
       <SafeAreaProvider>
         <SafeAreaView style={sharedStyles.container}>
           <View style={sharedStyles.loadingContainer}>
-            <ActivityIndicator size="large" />
-            <Text style={sharedStyles.loadingText}>Carregando dados de rentabilidade...</Text>
+            <ActivityIndicator size="large" color={primaryGreen} />
+            <Text style={sharedStyles.loadingText}>
+              Carregando dados de rentabilidade...
+            </Text>
           </View>
         </SafeAreaView>
       </SafeAreaProvider>
@@ -162,42 +163,33 @@ export default function RentabilidadeScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={sharedStyles.container}>
-        {/* Header com estatísticas */}
-        {stats && (
-          <Surface style={sharedStyles.statsContainer}>
-            <View style={sharedStyles.titleSection}>
-              <Title style={sharedStyles.mainTitle}>Resumo da Carteira</Title>
-            </View>
-            <View style={sharedStyles.statsRow}>
-              <View style={sharedStyles.statItem}>
-                <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#f44336' }]}>
-                  {formatCurrency(stats.totalInvestido)}
-                </Text>
-                <Text variant="bodyMedium" style={sharedStyles.statLabel}>Total Investido</Text>
-              </View>
-              <View style={sharedStyles.statItem}>
-                <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#2196F3' }]}>
-                  {formatCurrency(stats.valorAtual)}
-                </Text>
-                <Text variant="bodyMedium" style={sharedStyles.statLabel}>Valor Atual</Text>
-              </View>
-              <View style={sharedStyles.statItem}>
-                <Text variant="headlineSmall" style={[sharedStyles.statValue, { color: '#4CAF50' }]}>
-                  {formatCurrency(stats.totalProventos)}
-                </Text>
-                <Text variant="bodyMedium" style={sharedStyles.statLabel}>Proventos</Text>
-              </View>
-            </View>
-          </Surface>
-        )}
+        {/* Modern Header */}
+        <LinearGradient
+          colors={[primaryGreen, secondaryGreen]}
+          style={sharedStyles.modernHeader}
+          start={{ x: 0, y: 0 }}
+          end={{ x: 1, y: 1 }}
+        >
+          <Text style={[sharedStyles.headerTitle, { color: '#FFFFFF' }]}>
+            Rentabilidade
+          </Text>
+          <Text style={[sharedStyles.headerSubtitle, { color: '#FFFFFF90' }]}>
+            Acompanhe o desempenho dos seus investimentos
+          </Text>
+        </LinearGradient>
 
-        {/* Search */}
-        <Searchbar
-          placeholder="Buscar por ativo ou segmento..."
-          onChangeText={setSearchQuery}
-          value={searchQuery}
-          style={sharedStyles.searchbar}
-        />
+        {/* Modern Search */}
+        <View style={sharedStyles.searchContainer}>
+          <Searchbar
+            placeholder="Buscar por ativo ou segmento..."
+            onChangeText={setSearchQuery}
+            value={searchQuery}
+            style={sharedStyles.modernSearchbar}
+            inputStyle={{ color: '#1E293B' }}
+            iconColor={'#64748B'}
+            placeholderTextColor={'#64748B'}
+          />
+        </View>
 
         {/* Lista de ativos */}
         <ScrollView
@@ -207,117 +199,132 @@ export default function RentabilidadeScreen() {
           }
         >
           {filteredData.map((item) => (
-            <Card key={item.ativo} style={styles.card}>
-              <Card.Content>
-                <View style={styles.cardHeader}>
-                  <View style={styles.cardTitleRow}>
-                    <Avatar.Icon 
-                      size={40} 
-                      icon={getSegmentoIcon(item.segmento)}
-                      style={[styles.avatar, { backgroundColor: getSegmentoColor(item.segmento) }]}
-                    />
-                    <View style={styles.titleContainer}>
-                      <Text variant="titleMedium">{item.ativo}</Text>
-                      <Text variant="bodySmall" style={styles.subtitle}>
-                        {item.segmento}
-                      </Text>
-                    </View>
+            <View key={item.ativo} style={sharedStyles.modernCard}>
+              <View style={sharedStyles.cardHeader}>
+                <View style={styles.cardIcon}>
+                  <Icon
+                    source={getSegmentoIcon(item.segmento)}
+                    size={24}
+                    color={getSegmentoColor(item.segmento)}
+                  />
+                </View>
+                <View style={sharedStyles.cardTitleContainer}>
+                  <Text variant="titleMedium" style={sharedStyles.cardTitle}>
+                    {item.ativo}
+                  </Text>
+                  <Text variant="bodySmall" style={sharedStyles.cardSubtitle}>
+                    {item.segmento}
+                  </Text>
+                </View>
+                <View style={sharedStyles.actions}>
+                  <IconButton
+                    icon="currency-usd"
+                    size={20}
+                    iconColor={primaryGreen}
+                    onPress={() => handleOpenModal(item.ativo)}
+                    mode="outlined"
+                  />
+                </View>
+              </View>
+
+              <View style={sharedStyles.modernDivider} />
+
+              <View style={styles.rentabilidadeDetails}>
+                <View style={styles.detailRow}>
+                  <View style={styles.detailItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Quantidade</Text>
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {item.quantidade.toLocaleString('pt-BR')}
+                    </Text>
                   </View>
-                  <View style={styles.actions}>
-                    <IconButton
-                      icon="currency-usd"
-                      size={20}
-                      onPress={() => handleOpenModal(item.ativo)}
-                      mode="outlined"
-                    />
+                  <View style={styles.detailItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Preço Médio</Text>
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {formatCurrency(item.precoMedio)}
+                    </Text>
                   </View>
                 </View>
 
-                <Divider style={styles.divider} />
-
-                {/* Todas as informações em uma única linha horizontal - Segunda linha */}
-                <View style={styles.cardBody}>
-                  <View style={styles.fullTableRow}>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Quantidade</Text>
-                      <Text variant="bodySmall">{item.quantidade.toLocaleString('pt-BR')}</Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Preço Médio</Text>
-                      <Text variant="bodySmall">{formatCurrency(item.precoMedio)}</Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Preço Atual</Text>
-                      <Text variant="bodySmall">{formatCurrency(item.precoAtual)}</Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Investido</Text>
-                      <Text variant="bodySmall">{formatCurrency(item.investido)}</Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Atual</Text>
-                      <Text variant="bodySmall">{formatCurrency(item.atual)}</Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>L/P</Text>
-                      <Text 
-                        variant="bodySmall" 
-                        style={{ 
-                          color: getLucroColor(item.lucroOuPrejuizo),
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {formatCurrency(item.lucroOuPrejuizo)}
-                      </Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>% L/P</Text>
-                      <Text 
-                        variant="bodySmall"
-                        style={{ 
-                          color: getLucroColor(item.percentualLucroOuPrejuizo),
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {formatPercentage(item.percentualLucroOuPrejuizo)}
-                      </Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Proventos</Text>
-                      <Text variant="bodySmall" style={{ color: '#4CAF50' }}>
-                        {formatCurrency(item.proventos)}
-                      </Text>
-                    </View>
-                    <View style={styles.tableItem}>
-                      <Text variant="bodySmall" style={styles.compactLabel}>Rent. c/ Prov.</Text>
-                      <Text 
-                        variant="bodySmall"
-                        style={{ 
-                          color: getLucroColor(item.rentabilidadeComProventos),
-                          fontWeight: 'bold'
-                        }}
-                      >
-                        {formatPercentage(item.rentabilidadeComProventos)}
-                      </Text>
-                    </View>
+                <View style={styles.detailRow}>
+                  <View style={styles.detailItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Preço Atual</Text>
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {formatCurrency(item.precoAtual)}
+                    </Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Investido</Text>
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {formatCurrency(item.investido)}
+                    </Text>
                   </View>
                 </View>
-              </Card.Content>
-            </Card>
+
+                <View style={styles.detailRow}>
+                  <View style={styles.detailItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Valor Atual</Text>
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {formatCurrency(item.atual)}
+                    </Text>
+                  </View>
+                  <View style={styles.detailItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Proventos</Text>
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {formatCurrency(item.proventos)}
+                    </Text>
+                  </View>
+                </View>
+
+                <View style={styles.performanceRow}>
+                  <View style={styles.performanceItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>L/P</Text>
+                    <Text variant="titleMedium" style={[sharedStyles.valueAmount, { 
+                      color: getLucroColor(item.lucroOuPrejuizo),
+                      fontWeight: 'bold'
+                    }]}>
+                      {formatCurrency(item.lucroOuPrejuizo)}
+                    </Text>
+                  </View>
+                  <View style={styles.performanceItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>% L/P</Text>
+                    <Text variant="titleMedium" style={[sharedStyles.valueAmount, { 
+                      color: getLucroColor(item.percentualLucroOuPrejuizo),
+                      fontWeight: 'bold'
+                    }]}>
+                      {formatPercentage(item.percentualLucroOuPrejuizo)}
+                    </Text>
+                  </View>
+                  <View style={styles.performanceItem}>
+                    <Text variant="bodySmall" style={sharedStyles.valueLabel}>Rent. c/ Prov.</Text>
+                    <Text variant="titleMedium" style={[sharedStyles.valueAmount, { 
+                      color: getLucroColor(item.rentabilidadeComProventos),
+                      fontWeight: 'bold'
+                    }]}>
+                      {formatPercentage(item.rentabilidadeComProventos)}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
           ))}
 
           {filteredData.length === 0 && (
-            <Surface style={styles.emptyState}>
-              <Text variant="titleMedium" style={styles.emptyTitle}>
+            <View style={sharedStyles.emptyState}>
+              <Icon
+                source={searchQuery ? 'magnify' : 'chart-timeline-variant'}
+                size={48}
+                color={'#64748B'}
+              />
+              <Text variant="titleMedium" style={[sharedStyles.valueAmount, { marginTop: 16, textAlign: 'center', color: '#1E293B' }]}>
                 {searchQuery ? 'Nenhum ativo encontrado' : 'Nenhum dado de rentabilidade'}
               </Text>
-              <Text variant="bodyMedium" style={styles.emptySubtitle}>
+              <Text variant="bodyMedium" style={[sharedStyles.valueLabel, { textAlign: 'center', marginTop: 8, color: '#64748B' }]}>
                 {searchQuery 
                   ? 'Tente ajustar sua busca'
                   : 'Cadastre ativos e movimentações para ver a rentabilidade'
                 }
               </Text>
-            </Surface>
+            </View>
           )}
         </ScrollView>
 
@@ -326,9 +333,9 @@ export default function RentabilidadeScreen() {
           <Modal
             visible={modalVisible}
             onDismiss={handleCloseModal}
-            contentContainerStyle={[sharedStyles.modal, { backgroundColor: theme.colors.surface }]}
+            contentContainerStyle={sharedStyles.modal}
           >
-            <Text variant="titleLarge" style={{ marginBottom: 16 }}>
+            <Text variant="titleLarge" style={{ marginBottom: 16, color: primaryGreen }}>
               Atualizar Preço Atual
             </Text>
             
@@ -339,6 +346,7 @@ export default function RentabilidadeScreen() {
                 disabled={true}
                 style={sharedStyles.input}
                 mode="outlined"
+                textColor={'#1E293B'}
               />
 
               <View style={sharedStyles.formGroup}>
@@ -352,9 +360,9 @@ export default function RentabilidadeScreen() {
                   precision={2}
                   minValue={0}
                   style={[sharedStyles.currencyInput, { 
-                    borderColor: theme.colors.outline,
-                    backgroundColor: theme.colors.surface,
-                    color: theme.colors.onSurface
+                    borderColor: '#64748B',
+                    backgroundColor: cardBackground,
+                    color: '#1E293B'
                   }]}
                 />
               </View>
@@ -365,6 +373,7 @@ export default function RentabilidadeScreen() {
                 mode="outlined" 
                 onPress={handleCloseModal}
                 style={sharedStyles.modalButton}
+                textColor={'#1E293B'}
               >
                 Cancelar
               </Button>
@@ -373,7 +382,8 @@ export default function RentabilidadeScreen() {
                 onPress={handleSavePreco}
                 loading={updating}
                 disabled={updating || !formData.precoAtual}
-                style={sharedStyles.modalButton}
+                style={[sharedStyles.modalButton, { backgroundColor: primaryGreen }]}
+                textColor="#FFFFFF"
               >
                 Salvar
               </Button>
@@ -389,6 +399,68 @@ const styles = StyleSheet.create({
   ...sharedStyles,
   ...screenSpecificStyles,
   ...buttonStyles,
+
+  // Quick Stats Styles
+
+  quickStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+
+  quickStatCard: {
+    flex: 1,
+    alignItems: 'center',
+    padding: 16,
+    borderRadius: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  quickStatValue: {
+    fontSize: 16,
+    fontWeight: '600',
+    marginTop: 8,
+    marginBottom: 4,
+  },
+
+  quickStatLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+
+  // Estilos para detalhes da rentabilidade
+  rentabilidadeDetails: {
+    gap: 16,
+  },
+
+  detailRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 16,
+  },
+
+  detailItem: {
+    flex: 1,
+  },
+
+  performanceRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    paddingTop: 12,
+    borderTopWidth: 1,
+    borderTopColor: '#F1F5F9',
+    gap: 8,
+  },
+
+  performanceItem: {
+    flex: 1,
+    alignItems: 'center',
+  },
   
   infoGrid: {
     flexDirection: 'row',
