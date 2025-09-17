@@ -29,6 +29,14 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 export default function MovimentacoesScreen() {
   const theme = useTheme();
   
+  const getTodayDateString = () => {
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+  
   const {
     movimentacoes,
     stats,
@@ -55,7 +63,7 @@ export default function MovimentacoesScreen() {
     ativo: '',
     quantidade: undefined,
     segmento: 'acao',
-    data: new Date().toISOString().split('T')[0],
+    data: getTodayDateString(),
     valorUnitario: undefined,
     operacao: 'compra',
     observacao: ''
@@ -85,7 +93,7 @@ export default function MovimentacoesScreen() {
     const currentMonth = now.getMonth();
 
     return movimentacoes.filter(movimentacao => {
-      const movimentacaoDate = new Date(movimentacao.data);
+      const movimentacaoDate = createDateFromString(movimentacao.data);
       const movimentacaoYear = movimentacaoDate.getFullYear();
       const movimentacaoMonth = movimentacaoDate.getMonth();
 
@@ -148,7 +156,7 @@ export default function MovimentacoesScreen() {
       ativo: '',
       quantidade: undefined,
       segmento: 'acao',
-      data: new Date().toISOString().split('T')[0],
+      data: getTodayDateString(),
       valorUnitario: undefined,
       operacao: 'compra',
       observacao: ''
@@ -190,7 +198,7 @@ export default function MovimentacoesScreen() {
       ativo: formData.ativo,
       quantidade: formData.quantidade,
       segmento: formData.segmento || 'acao',
-      data: formData.data || new Date().toISOString().split('T')[0],
+      data: formData.data || getTodayDateString(),
       valorUnitario: formData.valorUnitario,
       operacao: formData.operacao || 'compra',
       observacao: formData.observacao || ''
@@ -234,7 +242,23 @@ export default function MovimentacoesScreen() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    if (!dateString) return '';
+    // Evitar problemas de timezone ao exibir a data
+    const [year, month, day] = dateString.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString('pt-BR');
+  };
+
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    // Evitar problemas de timezone ao exibir a data no input
+    const [year, month, day] = dateString.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString('pt-BR');
+  };
+
+  const createDateFromString = (dateString: string) => {
+    // Função auxiliar para criar Date a partir de string sem problemas de timezone
+    const [year, month, day] = dateString.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
   };
 
   const onDismissDatePicker = () => {
@@ -244,7 +268,12 @@ export default function MovimentacoesScreen() {
   const onConfirmDate = (params: any) => {
     setDatePickerVisible(false);
     if (params.date) {
-      const formattedDate = params.date.toISOString().split('T')[0];
+      // Corrigir problema de timezone - usar data local sem conversão UTC
+      const date = new Date(params.date);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
       setFormData(prev => ({ ...prev, data: formattedDate }));
     }
   };
@@ -566,7 +595,7 @@ export default function MovimentacoesScreen() {
 
               <TextInput
                 label="Data"
-                value={formData.data ? new Date(formData.data).toLocaleDateString('pt-BR') : ''}
+                value={formatDateForInput(formData.data || '')}
                 style={styles.input}
                 mode="flat"
                 right={<TextInput.Icon icon="calendar" onPress={() => setDatePickerVisible(true)} />}
@@ -580,7 +609,10 @@ export default function MovimentacoesScreen() {
                 mode="single"
                 visible={datePickerVisible}
                 onDismiss={onDismissDatePicker}
-                date={formData.data ? new Date(formData.data) : new Date()}
+                date={formData.data ? (() => {
+                  const [year, month, day] = formData.data.split('-');
+                  return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                })() : new Date()}
                 onConfirm={onConfirmDate}
               />
 

@@ -84,7 +84,7 @@ export default function ProventosScreen() {
     const currentMonth = now.getMonth();
 
     return proventos.filter(provento => {
-      const proventoDate = new Date(provento.data);
+      const proventoDate = createDateFromString(provento.data);
       const proventoYear = proventoDate.getFullYear();
       const proventoMonth = proventoDate.getMonth();
 
@@ -214,7 +214,10 @@ export default function ProventosScreen() {
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('pt-BR');
+    if (!dateString) return '';
+    // Evitar problemas de timezone ao exibir a data
+    const [year, month, day] = dateString.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString('pt-BR');
   };
 
   const formatDateForInput = (dateString: string) => {
@@ -222,6 +225,12 @@ export default function ProventosScreen() {
     // Evitar problemas de timezone ao exibir a data no input
     const [year, month, day] = dateString.split('-');
     return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString('pt-BR');
+  };
+
+  const createDateFromString = (dateString: string) => {
+    // Função auxiliar para criar Date a partir de string sem problemas de timezone
+    const [year, month, day] = dateString.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
   };
 
   const onDismissDatePicker = () => {
