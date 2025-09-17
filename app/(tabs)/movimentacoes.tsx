@@ -1,26 +1,27 @@
 import { cardBackground, primaryGreen, secondaryGreen } from '@/constants/Colors';
 import { useMovimentacoes } from '@/hooks/useMovimentacoes';
-import { buttonStyles, screenSpecificStyles, sharedStyles } from '@/styles/sharedStyles';
+import { styles } from '@/styles/movimentacoesStyles';
+import { sharedStyles } from '@/styles/sharedStyles';
 import { CreateMovimentacaoInput, Movimentacao, SegmentoMovimentacao, TipoOperacao } from '@/types/movimentacao';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
-    ActivityIndicator,
-    Avatar,
-    Button,
-    Chip,
-    FAB,
-    Icon,
-    IconButton,
-    Modal,
-    Portal,
-    Searchbar,
-    Text,
-    TextInput,
-    Title,
-    useTheme
+  ActivityIndicator,
+  Avatar,
+  Button,
+  Chip,
+  FAB,
+  Icon,
+  IconButton,
+  Modal,
+  Portal,
+  Searchbar,
+  Text,
+  TextInput,
+  Title,
+  useTheme
 } from 'react-native-paper';
 import { DatePickerModal } from 'react-native-paper-dates';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -40,6 +41,7 @@ export default function MovimentacoesScreen() {
   } = useMovimentacoes();
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredMovimentacoes, setFilteredMovimentacoes] = useState<Movimentacao[]>([]);
@@ -368,70 +370,25 @@ export default function MovimentacoesScreen() {
 
         {/* Search and Filters */}
         <View style={sharedStyles.searchContainer}>
-          <Searchbar
-            placeholder="Buscar por ativo, segmento ou operação..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={sharedStyles.modernSearchbar}
-            inputStyle={{ color: '#1E293B' }}
-            iconColor={'#64748B'}
-            placeholderTextColor={'#64748B'}
-          />
-        </View>
-
-        <View style={[styles.filtersContainer, { backgroundColor: cardBackground }]}>
-          <View style={styles.filterSection}>
-            <Text style={[styles.filterLabel, { color: '#64748B' }]}>
-              Tipo de operação
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
-              {tiposOperacao.map((filtro) => (
-                <Chip
-                  key={filtro.value}
-                  mode="flat"
-                  selected={filterType === filtro.value}
-                  onPress={() => setFilterType(filtro.value)}
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: filterType === filtro.value ? primaryGreen : cardBackground,
-                    }
-                  ]}
-                  textStyle={{
-                    color: filterType === filtro.value ? '#FFFFFF' : '#1E293B'
-                  }}
-                >
-                  {filtro.label}
-                </Chip>
-              ))}
-            </ScrollView>
-          </View>
-
-          <View style={styles.filterSection}>
-            <Text style={[styles.filterLabel, { color: '#64748B' }]}>
-              Período
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
-              {filtrosData.map((filtro) => (
-                <Chip
-                  key={filtro.value}
-                  mode="flat"
-                  selected={dateFilter === filtro.value}
-                  onPress={() => setDateFilter(filtro.value)}
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: dateFilter === filtro.value ? primaryGreen : cardBackground,
-                    }
-                  ]}
-                  textStyle={{
-                    color: dateFilter === filtro.value ? '#FFFFFF' : '#1E293B'
-                  }}
-                >
-                  {filtro.label}
-                </Chip>
-              ))}
-            </ScrollView>
+          <View style={styles.searchWrapper}>
+            <Searchbar
+              placeholder="Buscar por ativo, segmento ou operação..."
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={[sharedStyles.modernSearchbar, { flex: 1 }]}
+              inputStyle={{ color: '#1E293B' }}
+              iconColor={'#64748B'}
+              placeholderTextColor={'#64748B'}
+            />
+            <IconButton
+              icon="filter-variant"
+              mode="contained-tonal"
+              size={24}
+              onPress={() => setFilterModalVisible(true)}
+              iconColor={primaryGreen}
+              containerColor={primaryGreen + '15'}
+              style={styles.filterIconButton}
+            />
           </View>
         </View>
 
@@ -693,133 +650,103 @@ export default function MovimentacoesScreen() {
               </View>
             </ScrollView>
           </Modal>
+
+          {/* Filter Modal */}
+          <Modal
+            visible={filterModalVisible}
+            onDismiss={() => setFilterModalVisible(false)}
+            contentContainerStyle={[styles.filterModal, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.filterModalContent}>
+              <Text style={[styles.modalTitle, { color: '#1E293B' }]}>
+                Filtrar Movimentações
+              </Text>
+              
+              <Text style={[styles.filterModalSubtitle, { color: '#64748B' }]}>
+                Selecione o tipo de operação e período
+              </Text>
+
+              {/* Filtro por Tipo de Operação */}
+              <View style={styles.filterGroup}>
+                <Text style={[styles.filterGroupTitle, { color: '#1E293B' }]}>
+                  Tipo de Operação
+                </Text>
+                <View style={styles.filterOptionsContainer}>
+                  {tiposOperacao.map((tipo) => (
+                    <Chip
+                      key={tipo.value}
+                      mode="flat"
+                      selected={filterType === tipo.value}
+                      onPress={() => setFilterType(tipo.value)}
+                      style={[
+                        styles.filterModalChip,
+                        {
+                          backgroundColor: filterType === tipo.value ? primaryGreen : cardBackground,
+                        }
+                      ]}
+                      textStyle={{
+                        color: filterType === tipo.value ? '#FFFFFF' : '#1E293B'
+                      }}
+                    >
+                      {tipo.label}
+                    </Chip>
+                  ))}
+                </View>
+              </View>
+
+              {/* Filtro por Período */}
+              <View style={styles.filterGroup}>
+                <Text style={[styles.filterGroupTitle, { color: '#1E293B' }]}>
+                  Período
+                </Text>
+                <View style={styles.filterOptionsContainer}>
+                  {filtrosData.map((filtro) => (
+                    <Chip
+                      key={filtro.value}
+                      mode="flat"
+                      selected={dateFilter === filtro.value}
+                      onPress={() => setDateFilter(filtro.value)}
+                      style={[
+                        styles.filterModalChip,
+                        {
+                          backgroundColor: dateFilter === filtro.value ? primaryGreen : cardBackground,
+                        }
+                      ]}
+                      textStyle={{
+                        color: dateFilter === filtro.value ? '#FFFFFF' : '#1E293B'
+                      }}
+                    >
+                      {filtro.label}
+                    </Chip>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.filterModalActions}>
+                <Button
+                  mode="outlined"
+                  onPress={() => {
+                    setFilterType('todos');
+                    setDateFilter('todos');
+                  }}
+                  style={[styles.modalButton, { flex: 0.4 }]}
+                  textColor={'#1E293B'}
+                >
+                  Limpar
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={() => setFilterModalVisible(false)}
+                  style={[styles.modalButton, { backgroundColor: primaryGreen, flex: 0.6 }]}
+                  textColor="#FFFFFF"
+                >
+                  Aplicar Filtros
+                </Button>
+              </View>
+            </View>
+          </Modal>
         </Portal>
       </SafeAreaView>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  ...sharedStyles,
-  ...buttonStyles,
-  ...screenSpecificStyles,
-  
-  // Quick Stats Styles
-  quickStatsContainer: {
-    backgroundColor: '#F8FAFB',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-
-  quickStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-
-  quickStatCard: {
-    flex: 1,
-    backgroundColor: cardBackground,
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-
-  quickStatValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-
-  quickStatLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-
-  // Filter Styles
-  filtersContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-
-  filterSection: {
-    marginBottom: 16,
-  },
-
-  filterLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-
-  filterChips: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 4,
-  },
-
-  filterChip: {
-    marginRight: 8,
-  },
-
-  // Estilos para o layout modernizado
-  movimentacaoDetails: {
-    gap: 16,
-  },
-
-  detailRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 16,
-  },
-
-  detailItem: {
-    flex: 1,
-  },
-
-  totalRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-  },
-
-  observacaoContainer: {
-    paddingTop: 12,
-    borderTopWidth: 1,
-    borderTopColor: '#F1F5F9',
-  },
-  
-  // Estilos específicos para layout de tabela compacta
-  fullTableRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: 8,
-    paddingHorizontal: 4,
-  },
-  
-  tableItem: {
-    flex: 1,
-    alignItems: 'center',
-    paddingHorizontal: 1,
-    minWidth: 60,
-  },
-  
-  compactLabel: {
-    opacity: 0.7,
-    marginBottom: 2,
-    textAlign: 'center',
-    fontSize: 9,
-  },
-});

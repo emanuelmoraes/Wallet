@@ -2,6 +2,45 @@ import { backgroundGray, cardBackground, darkBackground, darkCard } from '@/cons
 import { Platform, StyleSheet } from 'react-native';
 
 export const sharedStyles = StyleSheet.create({
+  quickStatsContainer: {
+    backgroundColor: darkBackground,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+  },
+
+  quickStatsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 12,
+  },
+
+  quickStatCard: {
+    flex: 1,
+    backgroundColor: '#2e323dff',
+    borderRadius: 16,
+    padding: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    elevation: 3,
+  },
+
+  quickStatValue: {
+    fontSize: 18,
+    fontWeight: '700',
+    textAlign: 'center',
+  },
+
+  quickStatLabel: {
+    fontSize: 12,
+    fontWeight: '500',
+    textAlign: 'center',
+  },
+  
   // ==================== CONTAINER STYLES ====================
   container: {
     flex: 1,
@@ -519,6 +558,7 @@ export const sharedStyles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#000000',
     borderRadius: 4,
+    color: 'black',
   },
 
   currencyInput: {

@@ -1,10 +1,11 @@
-import { cardBackground, darkBackground, primaryGreen, secondaryGreen } from '@/constants/Colors';
+import { cardBackground, primaryGreen, secondaryGreen } from '@/constants/Colors';
 import { useAtivos } from '@/hooks/useAtivos';
+import { styles } from '@/styles/ativosStyles';
 import { sharedStyles } from '@/styles/sharedStyles';
 import { Ativo, CreateAtivoInput } from '@/types/ativo';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
   ActivityIndicator,
@@ -40,6 +41,7 @@ export default function AtivosScreen() {
   } = useAtivos();
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredAtivos, setFilteredAtivos] = useState<Ativo[]>([]);
@@ -243,49 +245,49 @@ export default function AtivosScreen() {
         </LinearGradient>
 
         {/* Quick Stats Cards */}
-        <View style={styles.quickStatsContainer}>
-          <View style={styles.quickStatsRow}>
-            <View style={styles.quickStatCard}>
+        <View style={sharedStyles.quickStatsContainer}>
+          <View style={sharedStyles.quickStatsRow}>
+            <View style={sharedStyles.quickStatCard}>
               <Avatar.Icon 
                 size={40} 
                 icon="wallet" 
                 style={{ backgroundColor: primaryGreen + '15' }}
                 color={primaryGreen}
               />
-              <Text style={[styles.quickStatValue, { color: primaryGreen }]}>
+              <Text style={[sharedStyles.quickStatValue, { color: primaryGreen }]}>
                 {totalAtivos}
               </Text>
-              <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
+              <Text style={[sharedStyles.quickStatLabel, { color: '#64748B' }]}>
                 Total
               </Text>
             </View>
 
-            <View style={styles.quickStatCard}>
+            <View style={sharedStyles.quickStatCard}>
               <Avatar.Icon 
                 size={40} 
                 icon="check-circle" 
                 style={{ backgroundColor: '#4CAF50' + '15' }}
                 color={'#4CAF50'}
               />
-              <Text style={[styles.quickStatValue, { color: '#4CAF50' }]}>
+              <Text style={[sharedStyles.quickStatValue, { color: '#4CAF50' }]}>
                 {ativosAtivos}
               </Text>
-              <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
+              <Text style={[sharedStyles.quickStatLabel, { color: '#64748B' }]}>
                 Ativos
               </Text>
             </View>
 
-            <View style={styles.quickStatCard}>
+            <View style={sharedStyles.quickStatCard}>
               <Avatar.Icon 
                 size={40} 
                 icon="trending-up" 
                 style={{ backgroundColor: '#FFB946' + '15' }}
                 color={'#FFB946'}
               />
-              <Text style={[styles.quickStatValue, { color: '#FFB946' }]}>
+              <Text style={[sharedStyles.quickStatValue, { color: '#FFB946' }]}>
                 {formatCurrency(totalInvestido)}
               </Text>
-              <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
+              <Text style={[sharedStyles.quickStatLabel, { color: '#64748B' }]}>
                 Investido
               </Text>
             </View>
@@ -294,43 +296,25 @@ export default function AtivosScreen() {
 
         {/* Search and Filter */}
         <View style={sharedStyles.searchContainer}>
-          <Searchbar
-            placeholder="Buscar por nome, ticker ou setor..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={sharedStyles.modernSearchbar}
-            inputStyle={{ color: '#1E293B' }}
-            iconColor={'#64748B'}
-            placeholderTextColor={'#64748B'}
-          />
-        </View>
-
-        <View style={[styles.filtersContainer, { backgroundColor: cardBackground }]}>
-          <View style={styles.filterSection}>
-            <Text style={[styles.filterLabel, { color: '#64748B' }]}>
-              Filtrar por tipo
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.filterChips}>
-              {tiposAtivo.map((tipo) => (
-                <Chip
-                  key={tipo.value}
-                  mode="flat"
-                  selected={filterType === tipo.value}
-                  onPress={() => setFilterType(tipo.value)}
-                  style={[
-                    styles.filterChip,
-                    {
-                      backgroundColor: filterType === tipo.value ? primaryGreen : cardBackground,
-                    }
-                  ]}
-                  textStyle={{
-                    color: filterType === tipo.value ? '#FFFFFF' : '#1E293B'
-                  }}
-                >
-                  {tipo.label}
-                </Chip>
-              ))}
-            </ScrollView>
+          <View style={styles.searchWrapper}>
+            <Searchbar
+              placeholder="Buscar por nome, ticker ou setor..."
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={[sharedStyles.modernSearchbar, { flex: 1 }]}
+              inputStyle={{ color: '#1E293B' }}
+              iconColor={'#64748B'}
+              placeholderTextColor={'#64748B'}
+            />
+            <IconButton
+              icon="filter-variant"
+              mode="contained-tonal"
+              size={24}
+              onPress={() => setFilterModalVisible(true)}
+              iconColor={primaryGreen}
+              containerColor={primaryGreen + '15'}
+              style={styles.filterIconButton}
+            />
           </View>
         </View>
 
@@ -391,7 +375,7 @@ export default function AtivosScreen() {
                   <Text style={[sharedStyles.valueLabel, { color: '#64748B' }]}>
                     Quantidade
                   </Text>
-                  <Text style={[sharedStyles.valueAmount, { color: '#1E293B' }]}>
+                  <Text style={sharedStyles.valueAmount}>
                     {ativo.quantidade.toLocaleString('pt-BR')}
                   </Text>
                 </View>
@@ -400,7 +384,7 @@ export default function AtivosScreen() {
                   <Text style={[sharedStyles.valueLabel, { color: '#64748B' }]}>
                     Preço Médio
                   </Text>
-                  <Text style={[sharedStyles.valueAmount, { color: '#1E293B' }]}>
+                  <Text style={sharedStyles.valueAmount}>
                     {formatCurrency(ativo.preco)}
                   </Text>
                 </View>
@@ -599,155 +583,61 @@ export default function AtivosScreen() {
               </View>
             </ScrollView>
           </Modal>
+
+          {/* Filter Modal */}
+          <Modal
+            visible={filterModalVisible}
+            onDismiss={() => setFilterModalVisible(false)}
+            contentContainerStyle={[styles.filterModal, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.filterModalContent}>
+              <Text style={[styles.modalTitle, { color: '#1E293B' }]}>
+                Filtrar por Tipo
+              </Text>
+              
+              <Text style={[styles.filterModalSubtitle, { color: '#64748B' }]}>
+                Selecione um tipo de ativo para filtrar
+              </Text>
+
+              <View style={styles.filterOptionsContainer}>
+                {tiposAtivo.map((tipo) => (
+                  <Chip
+                    key={tipo.value}
+                    mode="flat"
+                    selected={filterType === tipo.value}
+                    onPress={() => {
+                      setFilterType(tipo.value);
+                      setFilterModalVisible(false);
+                    }}
+                    style={[
+                      styles.filterModalChip,
+                      {
+                        backgroundColor: filterType === tipo.value ? primaryGreen : cardBackground,
+                      }
+                    ]}
+                    textStyle={{
+                      color: filterType === tipo.value ? '#FFFFFF' : '#1E293B'
+                    }}
+                  >
+                    {tipo.label}
+                  </Chip>
+                ))}
+              </View>
+
+              <View style={styles.filterModalActions}>
+                <Button
+                  mode="outlined"
+                  onPress={() => setFilterModalVisible(false)}
+                  style={styles.modalButton}
+                  textColor={'#1E293B'}
+                >
+                  Fechar
+                </Button>
+              </View>
+            </View>
+          </Modal>
         </Portal>
       </SafeAreaView>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  // Quick Stats Styles
-  quickStatsContainer: {
-    backgroundColor: darkBackground,
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-
-  quickStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-
-  quickStatCard: {
-    flex: 1,
-    backgroundColor: '#2e323dff',
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-
-  quickStatValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-
-  quickStatLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-
-  // Filter Styles
-  filtersContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-
-  filterSection: {
-    marginBottom: 16,
-  },
-
-  filterLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-
-  filterChips: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 4,
-  },
-
-  filterChip: {
-    marginRight: 8,
-  },
-
-  // Card actions
-  cardActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-  
-  // Ativo details
-  ativoDetails: {
-    gap: 12,
-  },
-
-  // Modal styles
-  modal: {
-    backgroundColor: cardBackground,
-    padding: 20,
-    margin: 20,
-    borderRadius: 12,
-    maxHeight: '90%',
-  },
-  
-  modalContent: {
-    paddingBottom: 20,
-  },
-
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    marginBottom: 20,
-    textAlign: 'center',
-  },
-
-  // Form styles
-  input: {
-    marginBottom: 12,
-    backgroundColor: 'transparent',
-  },
-  
-  currencyInput: {
-    borderWidth: 1,
-    backgroundColor: 'transparent',
-    paddingVertical: 16,
-    paddingHorizontal: 12,
-    fontSize: 16,
-    borderRadius: 4,
-    height: 56,
-  },
-  
-  formRow: {
-    flexDirection: 'row',
-    gap: 12,
-    marginBottom: 12,
-  },
-  
-  halfInput: {
-    flex: 1,
-  },
-  
-  pickerLabel: {
-    marginBottom: 8,
-    fontSize: 14,
-    fontWeight: '500',
-  },
-
-  segmentedButtons: {
-    marginBottom: 12,
-  },
-
-  // Modal actions
-  modalActions: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginTop: 16,
-    gap: 12,
-  },
-  
-  modalButton: {
-    flex: 1,
-  },
-});

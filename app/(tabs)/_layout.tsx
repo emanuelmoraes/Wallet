@@ -3,7 +3,6 @@ import React from 'react';
 import { Platform } from 'react-native';
 
 import { HapticTab } from '@/components/HapticTab';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
@@ -20,12 +19,14 @@ export default function TabLayout() {
         headerShown: false,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
+        tabBarShowLabel: true,
+        tabBarIcon: () => null, // Remove todos os ícones globalmente
         tabBarStyle: {
           backgroundColor: colors.tabBackground,
           borderTopWidth: 0,
-          height: Platform.OS === 'ios' ? 88 : 60,
-          paddingBottom: Platform.OS === 'ios' ? 20 : 8,
-          paddingTop: 8,
+          height: Platform.OS === 'ios' ? 65 : 55, // Altura menor sem ícones
+          paddingBottom: Platform.OS === 'ios' ? 15 : 5,
+          paddingTop: 5,
           shadowColor: colors.shadow,
           shadowOffset: { width: 0, height: -2 },
           shadowOpacity: colors.shadowOpacity,
@@ -39,77 +40,44 @@ export default function TabLayout() {
           }),
         },
         tabBarLabelStyle: {
-          fontSize: 12,
+          fontSize: 11,
           fontWeight: '600',
-          marginTop: 4,
+          marginTop: 0,
+          marginBottom: 0,
+          textAlign: 'center',
         },
         tabBarIconStyle: {
-          marginBottom: 2,
+          display: 'none', // Esconde completamente o espaço dos ícones
         },
       }}>
       <Tabs.Screen
         name="index"
         options={{
           title: 'Portfolio',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol 
-              size={24} 
-              name="chart.pie.fill" 
-              color={color} 
-            />
-          ),
         }}
       />
       <Tabs.Screen
         name="ativos"
         options={{
           title: 'Ativos',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol 
-              size={24} 
-              name="list.bullet.clipboard.fill" 
-              color={color} 
-            />
-          ),
         }}
       />
       <Tabs.Screen
         name="proventos"
         options={{
           title: 'Proventos',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol 
-              size={24} 
-              name="dollarsign.circle.fill" 
-              color={color} 
-            />
-          ),
         }}
       />
       <Tabs.Screen
         name="movimentacoes"
         options={{
           title: 'Movimentações',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol 
-              size={24} 
-              name="arrow.left.arrow.right.circle.fill" 
-              color={color} 
-            />
-          ),
         }}
       />
       <Tabs.Screen
         name="rentabilidade"
         options={{
           title: 'Rentabilidade',
-          tabBarIcon: ({ color }) => (
-            <IconSymbol 
-              size={24} 
-              name="chart.line.uptrend.xyaxis.circle.fill" 
-              color={color} 
-            />
-          ),
         }}
       />
     </Tabs>

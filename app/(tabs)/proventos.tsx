@@ -1,25 +1,26 @@
 import { cardBackground, primaryGreen, secondaryGreen } from '@/constants/Colors';
 import { useProventos } from '@/hooks/useProventos';
-import { buttonStyles, screenSpecificStyles, sharedStyles } from '@/styles/sharedStyles';
+import { styles } from '@/styles/proventosStyles';
+import { sharedStyles } from '@/styles/sharedStyles';
 import { CreateProventoInput, Provento, TipoProvento } from '@/types/provento';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { RefreshControl, ScrollView, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
-    ActivityIndicator,
-    Avatar,
-    Button,
-    Chip,
-    FAB,
-    IconButton,
-    Modal,
-    Portal,
-    Searchbar,
-    Text,
-    TextInput,
-    Title,
-    useTheme
+  ActivityIndicator,
+  Avatar,
+  Button,
+  Chip,
+  FAB,
+  IconButton,
+  Modal,
+  Portal,
+  Searchbar,
+  Text,
+  TextInput,
+  Title,
+  useTheme
 } from 'react-native-paper';
 import { DatePickerModal } from 'react-native-paper-dates';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
@@ -41,6 +42,7 @@ export default function ProventosScreen() {
   } = useProventos();
 
   const [modalVisible, setModalVisible] = useState(false);
+  const [filterModalVisible, setFilterModalVisible] = useState(false);
   const [editingId, setEditingId] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredProventos, setFilteredProventos] = useState<Provento[]>([]);
@@ -215,6 +217,13 @@ export default function ProventosScreen() {
     return new Date(dateString).toLocaleDateString('pt-BR');
   };
 
+  const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    // Evitar problemas de timezone ao exibir a data no input
+    const [year, month, day] = dateString.split('-');
+    return new Date(parseInt(year), parseInt(month) - 1, parseInt(day)).toLocaleDateString('pt-BR');
+  };
+
   const onDismissDatePicker = () => {
     setDatePickerVisible(false);
   };
@@ -222,7 +231,12 @@ export default function ProventosScreen() {
   const onConfirmDate = (params: any) => {
     setDatePickerVisible(false);
     if (params.date) {
-      const formattedDate = params.date.toISOString().split('T')[0];
+      // Corrigir problema de timezone - usar data local sem conversão UTC
+      const date = new Date(params.date);
+      const year = date.getFullYear();
+      const month = String(date.getMonth() + 1).padStart(2, '0');
+      const day = String(date.getDate()).padStart(2, '0');
+      const formattedDate = `${year}-${month}-${day}`;
       setFormData(prev => ({ ...prev, data: formattedDate }));
     }
   };
@@ -288,7 +302,7 @@ export default function ProventosScreen() {
         </LinearGradient>
 
         {/* Quick Stats Cards */}
-        <View style={styles.quickStatsContainer}>
+        <View style={sharedStyles.quickStatsContainer}>
           <View style={styles.quickStatsRow}>
             <View style={styles.quickStatCard}>
               <Avatar.Icon 
@@ -339,74 +353,26 @@ export default function ProventosScreen() {
 
         {/* Search Bar */}
         <View style={sharedStyles.searchContainer}>
-          <Searchbar
-            placeholder="Buscar por ativo ou tipo..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={sharedStyles.modernSearchbar}
-            inputStyle={{ color: '#1E293B' }}
-            iconColor={'#64748B'}
-            placeholderTextColor={'#64748B'}
-            elevation={0}
-          />
-        </View>
-
-        {/* Filters */}
-        <View style={[styles.filtersContainer, { backgroundColor: '#F8FAFB' }]}>
-          <View style={styles.filterSection}>
-            <Text style={[styles.filterLabel, { color: '#64748B' }]}>
-              Tipo
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.filterChips}>
-                {tiposProvento.map((tipo) => (
-                  <Chip
-                    key={tipo.value}
-                    selected={filterType === tipo.value}
-                    onPress={() => setFilterType(tipo.value)}
-                    style={[
-                      styles.filterChip,
-                      {
-                        backgroundColor: filterType === tipo.value ? primaryGreen : cardBackground,
-                      }
-                    ]}
-                    textStyle={{
-                      color: filterType === tipo.value ? '#FFFFFF' : '#1E293B'
-                    }}
-                  >
-                    {tipo.label}
-                  </Chip>
-                ))}
-              </View>
-            </ScrollView>
-          </View>
-
-          <View style={styles.filterSection}>
-            <Text style={[styles.filterLabel, { color: '#64748B' }]}>
-              Período
-            </Text>
-            <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-              <View style={styles.filterChips}>
-                {filtrosData.map((filtro) => (
-                  <Chip
-                    key={filtro.value}
-                    selected={dateFilter === filtro.value}
-                    onPress={() => setDateFilter(filtro.value)}
-                    style={[
-                      styles.filterChip,
-                      {
-                        backgroundColor: dateFilter === filtro.value ? primaryGreen : cardBackground,
-                      }
-                    ]}
-                    textStyle={{
-                      color: dateFilter === filtro.value ? '#FFFFFF' : '#1E293B'
-                    }}
-                  >
-                    {filtro.label}
-                  </Chip>
-                ))}
-              </View>
-            </ScrollView>
+          <View style={styles.searchWrapper}>
+            <Searchbar
+              placeholder="Buscar por ativo ou tipo..."
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={[sharedStyles.modernSearchbar, { flex: 1 }]}
+              inputStyle={{ color: '#1E293B' }}
+              iconColor={'#64748B'}
+              placeholderTextColor={'#64748B'}
+              elevation={0}
+            />
+            <IconButton
+              icon="filter-variant"
+              mode="contained-tonal"
+              size={24}
+              onPress={() => setFilterModalVisible(true)}
+              iconColor={primaryGreen}
+              containerColor={primaryGreen + '15'}
+              style={styles.filterIconButton}
+            />
           </View>
         </View>
 
@@ -477,7 +443,7 @@ export default function ProventosScreen() {
                   <Text style={[sharedStyles.valueLabel, { color: '#64748B' }]}>
                     Data
                   </Text>
-                  <Text style={[sharedStyles.valueAmount, { color: '#1E293B' }]}>
+                  <Text style={sharedStyles.valueAmount}>
                     {formatDate(provento.data)}
                   </Text>
                 </View>
@@ -486,7 +452,7 @@ export default function ProventosScreen() {
                   <Text style={[sharedStyles.valueLabel, { color: '#64748B' }]}>
                     Tipo
                   </Text>
-                  <Text style={[sharedStyles.valueAmount, { color: '#1E293B' }]}>
+                  <Text style={sharedStyles.valueAmount}>
                     {getTipoLabel(provento.tipo)}
                   </Text>
                 </View>
@@ -572,7 +538,7 @@ export default function ProventosScreen() {
 
               <TextInput
                 label="Data"
-                value={formData.data ? new Date(formData.data).toLocaleDateString('pt-BR') : ''}
+                value={formatDateForInput(formData.data || '')}
                 style={styles.input}
                 mode="flat"
                 right={<TextInput.Icon icon="calendar" onPress={() => setDatePickerVisible(true)} />}
@@ -586,7 +552,10 @@ export default function ProventosScreen() {
                 mode="single"
                 visible={datePickerVisible}
                 onDismiss={onDismissDatePicker}
-                date={formData.data ? new Date(formData.data) : new Date()}
+                date={formData.data ? (() => {
+                  const [year, month, day] = formData.data.split('-');
+                  return new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+                })() : new Date()}
                 onConfirm={onConfirmDate}
               />
 
@@ -653,95 +622,103 @@ export default function ProventosScreen() {
               </View>
             </ScrollView>
           </Modal>
+
+          {/* Filter Modal */}
+          <Modal
+            visible={filterModalVisible}
+            onDismiss={() => setFilterModalVisible(false)}
+            contentContainerStyle={[styles.filterModal, { backgroundColor: cardBackground }]}
+          >
+            <View style={styles.filterModalContent}>
+              <Text style={[styles.modalTitle, { color: '#1E293B' }]}>
+                Filtrar Proventos
+              </Text>
+              
+              <Text style={[styles.filterModalSubtitle, { color: '#64748B' }]}>
+                Selecione o tipo e período dos proventos
+              </Text>
+
+              {/* Filtro por Tipo */}
+              <View style={styles.filterGroup}>
+                <Text style={[styles.filterGroupTitle, { color: '#1E293B' }]}>
+                  Tipo de Provento
+                </Text>
+                <View style={styles.filterOptionsContainer}>
+                  {tiposProvento.map((tipo) => (
+                    <Chip
+                      key={tipo.value}
+                      mode="flat"
+                      selected={filterType === tipo.value}
+                      onPress={() => setFilterType(tipo.value)}
+                      style={[
+                        styles.filterModalChip,
+                        {
+                          backgroundColor: filterType === tipo.value ? primaryGreen : cardBackground,
+                        }
+                      ]}
+                      textStyle={{
+                        color: filterType === tipo.value ? '#FFFFFF' : '#1E293B'
+                      }}
+                    >
+                      {tipo.label}
+                    </Chip>
+                  ))}
+                </View>
+              </View>
+
+              {/* Filtro por Período */}
+              <View style={styles.filterGroup}>
+                <Text style={[styles.filterGroupTitle, { color: '#1E293B' }]}>
+                  Período
+                </Text>
+                <View style={styles.filterOptionsContainer}>
+                  {filtrosData.map((filtro) => (
+                    <Chip
+                      key={filtro.value}
+                      mode="flat"
+                      selected={dateFilter === filtro.value}
+                      onPress={() => setDateFilter(filtro.value)}
+                      style={[
+                        styles.filterModalChip,
+                        {
+                          backgroundColor: dateFilter === filtro.value ? primaryGreen : cardBackground,
+                        }
+                      ]}
+                      textStyle={{
+                        color: dateFilter === filtro.value ? '#FFFFFF' : '#1E293B'
+                      }}
+                    >
+                      {filtro.label}
+                    </Chip>
+                  ))}
+                </View>
+              </View>
+
+              <View style={styles.filterModalActions}>
+                <Button
+                  mode="outlined"
+                  onPress={() => {
+                    setFilterType('todos');
+                    setDateFilter('todos');
+                  }}
+                  style={[styles.modalButton, { flex: 0.4 }]}
+                  textColor={'#1E293B'}
+                >
+                  Limpar
+                </Button>
+                <Button
+                  mode="contained"
+                  onPress={() => setFilterModalVisible(false)}
+                  style={[styles.modalButton, { backgroundColor: primaryGreen, flex: 0.6 }]}
+                  textColor="#FFFFFF"
+                >
+                  Aplicar Filtros
+                </Button>
+              </View>
+            </View>
+          </Modal>
         </Portal>
       </SafeAreaView>
     </SafeAreaProvider>
   );
 }
-
-const styles = StyleSheet.create({
-  ...sharedStyles,
-  ...buttonStyles,
-  ...screenSpecificStyles,
-  
-  // Quick Stats Styles (similar to index.tsx)
-  quickStatsContainer: {
-    backgroundColor: '#F8FAFB',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-
-  quickStatsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-
-  quickStatCard: {
-    flex: 1,
-    backgroundColor: cardBackground,
-    borderRadius: 16,
-    padding: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
-    shadowRadius: 8,
-    elevation: 3,
-  },
-
-  quickStatValue: {
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'center',
-  },
-
-  quickStatLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    textAlign: 'center',
-  },
-
-  // Filter Styles
-  filtersContainer: {
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-  },
-
-  filterSection: {
-    marginBottom: 16,
-  },
-
-  filterLabel: {
-    fontSize: 12,
-    fontWeight: '500',
-    marginBottom: 8,
-  },
-
-  filterChips: {
-    flexDirection: 'row',
-    gap: 8,
-    paddingHorizontal: 4,
-  },
-
-  filterChip: {
-    marginRight: 8,
-  },
-
-  // Card Styles
-  cardActions: {
-    flexDirection: 'row',
-    gap: 8,
-  },
-
-  proventoDetails: {
-    flexDirection: 'column',
-    gap: 12,
-  },
-
-  modalButton: {
-    marginHorizontal: 8,
-  },
-});
