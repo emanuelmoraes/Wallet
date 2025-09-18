@@ -49,6 +49,49 @@ interface UseFerramentasReturn {
 
 const TIPOS_ATIVOS_KEY = 'carteira-tipos-ativos';
 
+// Função auxiliar para formatar data no formato DD/MM/AAAA
+const formatDateToDDMMAAAA = (dateString: string): string => {
+  if (!dateString) return '';
+  
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) return dateString; // Se não conseguir converter, retorna o original
+    
+    const day = date.getDate().toString().padStart(2, '0');
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const year = date.getFullYear().toString();
+    
+    return `${day}/${month}/${year}`;
+  } catch (error) {
+    return dateString; // Em caso de erro, retorna o original
+  }
+};
+
+// Função auxiliar para converter data DD/MM/AAAA para ISO
+const parseDDMMAAAAToISO = (dateString: string): string => {
+  if (!dateString) return '';
+  
+  try {
+    // Se já está no formato ISO, retorna como está
+    if (dateString.includes('T') || dateString.includes('-')) {
+      return dateString;
+    }
+    
+    // Se está no formato DD/MM/AAAA
+    if (dateString.includes('/')) {
+      const [day, month, year] = dateString.split('/');
+      if (day && month && year) {
+        const date = new Date(parseInt(year), parseInt(month) - 1, parseInt(day));
+        return date.toISOString();
+      }
+    }
+    
+    return dateString;
+  } catch (error) {
+    return dateString;
+  }
+};
+
 // Tipos padrão do sistema
 const TIPOS_PADRAO: TipoAtivo[] = [
   { id: 'acao', nome: 'Ação', icon: 'chart-line', ativo: true },
@@ -315,19 +358,19 @@ export const useFerramentas = (): UseFerramentasReturn => {
   // Converter array para CSV
   const arrayToCSV = (data: any[], headers: string[]): string => {
     if (!data || data.length === 0) {
-      return headers.join(',') + '\n';
+      return headers.join('|') + '\n';
     }
 
-    const csvHeaders = headers.join(',');
+    const csvHeaders = headers.join('|');
     const csvRows = data.map(row => 
       headers.map(header => {
         const value = row[header];
-        // Escapar valores que contém vírgulas ou aspas
-        if (value && (value.toString().includes(',') || value.toString().includes('"'))) {
+        // Escapar valores que contém pipes ou aspas
+        if (value && (value.toString().includes('|') || value.toString().includes('"'))) {
           return `"${value.toString().replace(/"/g, '""')}"`;
         }
         return value || '';
-      }).join(',')
+      }).join('|')
     );
 
     return csvHeaders + '\n' + csvRows.join('\n');
@@ -338,9 +381,29 @@ export const useFerramentas = (): UseFerramentasReturn => {
     const lines = csvText.split('\n').filter(line => line.trim());
     if (lines.length < 2) return [];
 
-    const headers = lines[0].split(',').map(h => h.trim());
+    const headers = lines[0].split('|').map(h => h.trim());
     return lines.slice(1).map(line => {
-      const values = line.split(',').map(v => v.trim().replace(/^"|"$/g, ''));
+      // Parsing mais robusto para lidar com campos com aspas que podem conter pipes
+      const values: string[] = [];
+      let currentValue = '';
+      let insideQuotes = false;
+      
+      for (let i = 0; i < line.length; i++) {
+        const char = line[i];
+        
+        if (char === '"') {
+          insideQuotes = !insideQuotes;
+        } else if (char === '|' && !insideQuotes) {
+          values.push(currentValue.trim().replace(/^"|"$/g, ''));
+          currentValue = '';
+        } else {
+          currentValue += char;
+        }
+      }
+      
+      // Adicionar o último valor
+      values.push(currentValue.trim().replace(/^"|"$/g, ''));
+      
       const obj: any = {};
       headers.forEach((header, index) => {
         obj[header] = values[index] || '';
@@ -359,19 +422,40 @@ export const useFerramentas = (): UseFerramentasReturn => {
         AsyncStorage.getItem('carteira-investimentos-movimentacoes')
       ]);
 
-      // Headers para cada tipo de arquivo CSV
-      const ativosHeaders = ['id', 'ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes', 'createdAt', 'updatedAt'];
-      const proventosHeaders = ['id', 'ativoId', 'ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes', 'createdAt', 'updatedAt'];
-      const movimentacoesHeaders = ['id', 'ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'valorTotal', 'taxas', 'segmento', 'observacao', 'createdAt', 'updatedAt'];
+      // Headers para cada tipo de arquivo CSV (sem ID)
+      const ativosHeaders = ['ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes', 'createdAt', 'updatedAt'];
+      const proventosHeaders = ['ativoId', 'ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes', 'createdAt', 'updatedAt'];
+      const movimentacoesHeaders = ['ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'valorTotal', 'taxas', 'segmento', 'observacao', 'createdAt', 'updatedAt'];
 
       // Converter dados para CSV
       const ativos = ativosData ? JSON.parse(ativosData) : [];
       const proventos = proventosData ? JSON.parse(proventosData) : [];
       const movimentacoes = movimentacoesData ? JSON.parse(movimentacoesData) : [];
 
-      const ativosCSV = arrayToCSV(ativos, ativosHeaders);
-      const proventosCSV = arrayToCSV(proventos, proventosHeaders);
-      const movimentacoesCSV = arrayToCSV(movimentacoes, movimentacoesHeaders);
+      // Processar datas para formato DD/MM/AAAA antes da exportação
+      const processedAtivos = ativos.map((ativo: any) => ({
+        ...ativo,
+        createdAt: formatDateToDDMMAAAA(ativo.createdAt),
+        updatedAt: formatDateToDDMMAAAA(ativo.updatedAt)
+      }));
+
+      const processedProventos = proventos.map((provento: any) => ({
+        ...provento,
+        data: formatDateToDDMMAAAA(provento.data),
+        createdAt: formatDateToDDMMAAAA(provento.createdAt),
+        updatedAt: formatDateToDDMMAAAA(provento.updatedAt)
+      }));
+
+      const processedMovimentacoes = movimentacoes.map((mov: any) => ({
+        ...mov,
+        data: formatDateToDDMMAAAA(mov.data),
+        createdAt: formatDateToDDMMAAAA(mov.createdAt),
+        updatedAt: formatDateToDDMMAAAA(mov.updatedAt)
+      }));
+
+      const ativosCSV = arrayToCSV(processedAtivos, ativosHeaders);
+      const proventosCSV = arrayToCSV(processedProventos, proventosHeaders);
+      const movimentacoesCSV = arrayToCSV(processedMovimentacoes, movimentacoesHeaders);
 
       // Calcular estatísticas
       const stats = {
@@ -396,14 +480,13 @@ export const useFerramentas = (): UseFerramentasReturn => {
 
   // Gerar templates CSV para referência
   const generateCSVTemplates = useCallback((): { ativos: string; proventos: string; movimentacoes: string } => {
-    // Headers para cada tipo de arquivo CSV
-    const ativosHeaders = ['id', 'ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes', 'createdAt', 'updatedAt'];
-    const proventosHeaders = ['id', 'ativoId', 'ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes', 'createdAt', 'updatedAt'];
-    const movimentacoesHeaders = ['id', 'ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'valorTotal', 'taxas', 'segmento', 'observacao', 'createdAt', 'updatedAt'];
+    // Headers para cada tipo de arquivo CSV (sem ID)
+    const ativosHeaders = ['ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes', 'createdAt', 'updatedAt'];
+    const proventosHeaders = ['ativoId', 'ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes', 'createdAt', 'updatedAt'];
+    const movimentacoesHeaders = ['ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'valorTotal', 'taxas', 'segmento', 'observacao', 'createdAt', 'updatedAt'];
 
-    // Dados de exemplo para templates
+    // Dados de exemplo para templates (sem ID e com datas no formato DD/MM/AAAA)
     const exemploAtivos = [{
-      id: 1,
       ticker: 'PETR4',
       nome: 'Petrobras PN',
       tipo: 'acao',
@@ -415,27 +498,25 @@ export const useFerramentas = (): UseFerramentasReturn => {
       status: 'ativo',
       site: '',
       observacoes: 'Exemplo de ativo',
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z'
+      createdAt: '01/01/2024',
+      updatedAt: '01/01/2024'
     }];
 
     const exemploProventos = [{
-      id: 1,
       ativoId: 1,
       ativoTicker: 'PETR4',
       ativoNome: 'Petrobras PN',
-      data: '2024-06-15',
+      data: '15/06/2024',
       valor: 150.50,
       tipo: 'dividendo',
       observacoes: 'Exemplo de provento',
-      createdAt: '2024-06-15T00:00:00.000Z',
-      updatedAt: '2024-06-15T00:00:00.000Z'
+      createdAt: '15/06/2024',
+      updatedAt: '15/06/2024'
     }];
 
     const exemploMovimentacoes = [{
-      id: 1,
       ativo: 'PETR4',
-      data: '2024-01-01',
+      data: '01/01/2024',
       tipo: 'acao',
       operacao: 'compra',
       quantidade: 100,
@@ -444,8 +525,8 @@ export const useFerramentas = (): UseFerramentasReturn => {
       taxas: 10.00,
       segmento: 'Energia',
       observacao: 'Exemplo de movimentação',
-      createdAt: '2024-01-01T00:00:00.000Z',
-      updatedAt: '2024-01-01T00:00:00.000Z'
+      createdAt: '01/01/2024',
+      updatedAt: '01/01/2024'
     }];
 
     return {
@@ -464,13 +545,15 @@ export const useFerramentas = (): UseFerramentasReturn => {
       if (csvData.ativos) {
         const ativosArray = csvToArray(csvData.ativos);
         if (ativosArray.length > 0) {
-          // Converter strings para números quando necessário
-          const processedAtivos = ativosArray.map((ativo: any) => ({
+          // Converter strings para números quando necessário e processar datas
+          const processedAtivos = ativosArray.map((ativo: any, index: number) => ({
             ...ativo,
-            id: parseInt(ativo.id) || 0,
+            id: Date.now() + index, // Gerar novo ID baseado no timestamp
             preco: parseFloat(ativo.preco) || 0,
             quantidade: parseFloat(ativo.quantidade) || 0,
             valorTotal: parseFloat(ativo.valorTotal) || 0,
+            createdAt: parseDDMMAAAAToISO(ativo.createdAt) || new Date().toISOString(),
+            updatedAt: parseDDMMAAAAToISO(ativo.updatedAt) || new Date().toISOString()
           }));
           await AsyncStorage.setItem('carteira-investimentos-ativos', JSON.stringify(processedAtivos));
           importSuccess = true;
@@ -481,11 +564,14 @@ export const useFerramentas = (): UseFerramentasReturn => {
       if (csvData.proventos) {
         const proventosArray = csvToArray(csvData.proventos);
         if (proventosArray.length > 0) {
-          const processedProventos = proventosArray.map((provento: any) => ({
+          const processedProventos = proventosArray.map((provento: any, index: number) => ({
             ...provento,
-            id: parseInt(provento.id) || 0,
+            id: Date.now() + index, // Gerar novo ID baseado no timestamp
             ativoId: parseInt(provento.ativoId) || 0,
             valor: parseFloat(provento.valor) || 0,
+            data: parseDDMMAAAAToISO(provento.data) || provento.data,
+            createdAt: parseDDMMAAAAToISO(provento.createdAt) || new Date().toISOString(),
+            updatedAt: parseDDMMAAAAToISO(provento.updatedAt) || new Date().toISOString()
           }));
           await AsyncStorage.setItem('carteira-investimentos-proventos', JSON.stringify(processedProventos));
           importSuccess = true;
@@ -496,13 +582,16 @@ export const useFerramentas = (): UseFerramentasReturn => {
       if (csvData.movimentacoes) {
         const movimentacoesArray = csvToArray(csvData.movimentacoes);
         if (movimentacoesArray.length > 0) {
-          const processedMovimentacoes = movimentacoesArray.map((mov: any) => ({
+          const processedMovimentacoes = movimentacoesArray.map((mov: any, index: number) => ({
             ...mov,
-            id: parseInt(mov.id) || 0,
+            id: Date.now() + index, // Gerar novo ID baseado no timestamp
             quantidade: parseFloat(mov.quantidade) || 0,
             valorUnitario: parseFloat(mov.valorUnitario) || 0,
             valorTotal: parseFloat(mov.valorTotal) || 0,
             taxas: parseFloat(mov.taxas) || 0,
+            data: parseDDMMAAAAToISO(mov.data) || mov.data,
+            createdAt: parseDDMMAAAAToISO(mov.createdAt) || new Date().toISOString(),
+            updatedAt: parseDDMMAAAAToISO(mov.updatedAt) || new Date().toISOString()
           }));
           await AsyncStorage.setItem('carteira-investimentos-movimentacoes', JSON.stringify(processedMovimentacoes));
           importSuccess = true;

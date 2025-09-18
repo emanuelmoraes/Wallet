@@ -171,11 +171,10 @@ export default function FerramentasScreen() {
     try {
       const templates = generateCSVTemplates();
       
-      const timestamp = new Date().toISOString().slice(0, 10);
       const filesCreated = [
-        { name: `ativos_template_${timestamp}.csv`, content: templates.ativos },
-        { name: `proventos_template_${timestamp}.csv`, content: templates.proventos },
-        { name: `movimentacoes_template_${timestamp}.csv`, content: templates.movimentacoes }
+        { name: `ativos_template.csv`, content: templates.ativos },
+        { name: `proventos_template.csv`, content: templates.proventos },
+        { name: `movimentacoes_template.csv`, content: templates.movimentacoes }
       ];
 
       console.log('=== TEMPLATES PREPARADOS ===');
@@ -226,11 +225,10 @@ export default function FerramentasScreen() {
 
       const { ativos, proventos, movimentacoes, stats } = csvData;
       
-      const timestamp = new Date().toISOString().slice(0, 10);
       const filesCreated = [
-        { name: `ativos_${timestamp}.csv`, content: ativos },
-        { name: `proventos_${timestamp}.csv`, content: proventos },
-        { name: `movimentacoes_${timestamp}.csv`, content: movimentacoes }
+        { name: `ativos.csv`, content: ativos },
+        { name: `proventos.csv`, content: proventos },
+        { name: `movimentacoes.csv`, content: movimentacoes }
       ];
 
       console.log('=== DADOS PREPARADOS ===');
