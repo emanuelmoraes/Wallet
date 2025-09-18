@@ -80,6 +80,12 @@ export default function TabLayout() {
           title: 'Rentabilidade',
         }}
       />
+      <Tabs.Screen
+        name="ferramentas"
+        options={{
+          title: 'Ferramentas',
+        }}
+      />
     </Tabs>
   );
 }
