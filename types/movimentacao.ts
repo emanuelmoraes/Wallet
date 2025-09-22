@@ -8,7 +8,6 @@ export interface Movimentacao {
   segmento: SegmentoMovimentacao;
   data: string;
   valorUnitario: number;
-  valorTotal: number;
   operacao: TipoOperacao;
   observacao?: string;
   createdAt: string;

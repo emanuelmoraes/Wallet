@@ -504,7 +504,7 @@ export default function MovimentacoesScreen() {
                     color: getOperacaoColor(movimentacao.operacao),
                     fontWeight: 'bold'
                   }]}>
-                    {formatCurrency(movimentacao.valorTotal)}
+                    {formatCurrency(movimentacao.quantidade * movimentacao.valorUnitario)}
                   </Text>
                 </View>
 

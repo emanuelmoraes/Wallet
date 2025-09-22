@@ -2,9 +2,8 @@ export type TipoProvento = 'rendimento' | 'jcp' | 'dividendo';
 
 export interface Provento {
   id: number;
-  ativoId: number;
-  ativoTicker: string; // Para facilitar exibição
-  ativoNome: string; // Para facilitar exibição
+  ativoTicker: string;
+  ativoNome: string;
   data: string;
   valor: number;
   tipo: TipoProvento;
@@ -14,7 +13,7 @@ export interface Provento {
 }
 
 export interface CreateProventoInput {
-  ativoId: number;
+  ativoTicker: string;
   data: string;
   valor: number;
   tipo: TipoProvento;
@@ -23,7 +22,7 @@ export interface CreateProventoInput {
 
 export interface UpdateProventoInput {
   id: number;
-  ativoId: number;
+  ativoTicker: string;
   data: string;
   valor: number;
   tipo: TipoProvento;
@@ -31,7 +30,7 @@ export interface UpdateProventoInput {
 }
 
 export interface ProventoFilter {
-  ativoId?: number;
+  ativoTicker?: string;
   tipo?: TipoProvento;
   dataInicio?: string;
   dataFim?: string;

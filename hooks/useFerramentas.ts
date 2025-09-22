@@ -12,6 +12,16 @@ export interface TipoAtivo {
   ativo: boolean;
 }
 
+// Interface para erros de validação
+interface ValidationError {
+  type: string;
+  line: number;
+  field?: string;
+  value?: string;
+  expected?: string;
+  message: string;
+}
+
 interface UseFerramentasReturn {
   // Data
   tiposAtivos: TipoAtivo[];
@@ -20,6 +30,11 @@ interface UseFerramentasReturn {
   loading: boolean;
   saving: boolean;
   clearing: boolean;
+  
+  // Validation errors dialog
+  validationErrors: ValidationError[];
+  showValidationDialog: boolean;
+  clearValidationErrors: () => void;
   
   // Actions para tipos de ativos
   createTipoAtivo: (nome: string, icon: string) => Promise<boolean>;
@@ -106,6 +121,16 @@ export const useFerramentas = (): UseFerramentasReturn => {
   const [saving, setSaving] = useState(false);
   const [clearing, setClearing] = useState(false);
   const [initialized, setInitialized] = useState(false);
+  
+  // Estados para dialog de validação
+  const [validationErrors, setValidationErrors] = useState<ValidationError[]>([]);
+  const [showValidationDialog, setShowValidationDialog] = useState(false);
+  
+  // Limpar erros de validação
+  const clearValidationErrors = useCallback(() => {
+    setValidationErrors([]);
+    setShowValidationDialog(false);
+  }, []);
 
   // Inicialização
   const initializeFerramentas = useCallback(async () => {
@@ -347,6 +372,10 @@ export const useFerramentas = (): UseFerramentasReturn => {
       
       console.log('✅ Dados importados com sucesso');
       Alert.alert('Sucesso', 'Dados importados com sucesso');
+      
+      // Forçar recarga de ativos e proventos
+      console.log('🔄 Forçando recarga dos dados importados...');
+      
       return true;
     } catch (error) {
       console.error('❌ Erro ao importar dados:', error);
@@ -354,6 +383,317 @@ export const useFerramentas = (): UseFerramentasReturn => {
       return false;
     }
   }, [loadTiposAtivos]);
+
+  // Tipos de validação de CSV
+  interface CSVValidationError {
+    type: 'MISSING_FIELDS' | 'INVALID_TYPE' | 'INVALID_STATUS' | 'EMPTY_REQUIRED_FIELD' | 'INVALID_NUMBER' | 'INVALID_DATE' | 'EXTRA_QUOTES' | 'EMPTY_ROW';
+    line: number;
+    field?: string;
+    value?: string;
+    expected?: string;
+    message: string;
+  }
+
+  interface CSVValidationResult {
+    isValid: boolean;
+    errors: CSVValidationError[];
+    warnings: CSVValidationError[];
+    processedData: any[];
+  }
+
+  // Normalizar tipos de ativo para os aceitos pelo sistema
+  const normalizeAtivoType = (tipo: string): string => {
+    const normalizedTipo = tipo.toLowerCase().trim();
+    const typeMapping: { [key: string]: string } = {
+      'acao': 'acao',
+      'ação': 'acao',
+      'fii': 'fii',
+      'tesouro direto': 'renda_fixa',
+      'lci': 'renda_fixa',
+      'fi-infra': 'renda_fixa',
+      'cripto': 'cripto',
+      'cryptocurrency': 'cripto'
+    };
+    return typeMapping[normalizedTipo] || normalizedTipo;
+  };
+
+  // Normalizar status para minúsculo
+  const normalizeStatus = (status: string): string => {
+    return status.toLowerCase().trim();
+  };
+
+  // Validar CSV de ativos
+  const validateAtivosCSV = (csvText: string): CSVValidationResult => {
+    const errors: CSVValidationError[] = [];
+    const warnings: CSVValidationError[] = [];
+    const processedData: any[] = [];
+
+    try {
+      const lines = csvText.split('\n').filter(line => line.trim());
+      if (lines.length < 2) {
+        errors.push({
+          type: 'EMPTY_ROW',
+          line: 1,
+          message: 'Arquivo CSV vazio ou sem dados'
+        });
+        return { isValid: false, errors, warnings, processedData };
+      }
+
+      const expectedHeaders = ['ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes'];
+      const headers = lines[0].split('|').map(h => h.trim());
+
+      // Validar headers
+      const missingHeaders = expectedHeaders.filter(header => !headers.includes(header));
+      if (missingHeaders.length > 0) {
+        errors.push({
+          type: 'MISSING_FIELDS',
+          line: 1,
+          message: `Headers obrigatórios ausentes: ${missingHeaders.join(', ')}`
+        });
+      }
+
+      // Processar cada linha de dados
+      lines.slice(1).forEach((line, index) => {
+        const lineNumber = index + 2; // +2 porque index é 0-based e pulamos o header
+        
+        if (!line.trim()) {
+          warnings.push({
+            type: 'EMPTY_ROW',
+            line: lineNumber,
+            message: 'Linha vazia ignorada'
+          });
+          return;
+        }
+
+        const rawData = csvToArray(`${lines[0]}\n${line}`)[0];
+        
+        // Validações específicas
+        const requiredFields = ['ticker', 'nome', 'tipo', 'preco', 'quantidade'];
+        requiredFields.forEach(field => {
+          if (!rawData[field] || rawData[field].toString().trim() === '') {
+            errors.push({
+              type: 'EMPTY_REQUIRED_FIELD',
+              line: lineNumber,
+              field,
+              message: `Campo obrigatório '${field}' está vazio`
+            });
+          }
+        });
+
+        // Validar e normalizar tipo
+        if (rawData.tipo) {
+          const normalizedType = normalizeAtivoType(rawData.tipo);
+          const validTypes = ['acao', 'fii', 'renda_fixa', 'cripto'];
+          if (!validTypes.includes(normalizedType)) {
+            errors.push({
+              type: 'INVALID_TYPE',
+              line: lineNumber,
+              field: 'tipo',
+              value: rawData.tipo,
+              expected: validTypes.join(', '),
+              message: `Tipo de ativo inválido: '${rawData.tipo}'. Tipos aceitos: ${validTypes.join(', ')}`
+            });
+          } else {
+            rawData.tipo = normalizedType;
+          }
+        }
+
+        // Validar e normalizar status
+        if (rawData.status) {
+          const normalizedStatus = normalizeStatus(rawData.status);
+          const validStatuses = ['ativo', 'inativo'];
+          if (!validStatuses.includes(normalizedStatus)) {
+            errors.push({
+              type: 'INVALID_STATUS',
+              line: lineNumber,
+              field: 'status',
+              value: rawData.status,
+              expected: validStatuses.join(', '),
+              message: `Status inválido: '${rawData.status}'. Status aceitos: ${validStatuses.join(', ')}`
+            });
+          } else {
+            rawData.status = normalizedStatus;
+          }
+        }
+
+        // Validar números
+        ['preco', 'quantidade', 'valorTotal'].forEach(field => {
+          if (rawData[field] && rawData[field] !== '') {
+            const numValue = parseFloat(rawData[field]);
+            if (isNaN(numValue)) {
+              errors.push({
+                type: 'INVALID_NUMBER',
+                line: lineNumber,
+                field,
+                value: rawData[field],
+                message: `Valor numérico inválido no campo '${field}': '${rawData[field]}'`
+              });
+            } else {
+              rawData[field] = numValue;
+            }
+          }
+        });
+
+        // Detectar aspas extras ou problemas de formatação
+        if (rawData.ticker && (rawData.ticker.includes('"') || rawData.ticker.trim() !== rawData.ticker)) {
+          warnings.push({
+            type: 'EXTRA_QUOTES',
+            line: lineNumber,
+            field: 'ticker',
+            value: rawData.ticker,
+            message: `Possível problema de formatação no ticker: '${rawData.ticker}'`
+          });
+          rawData.ticker = rawData.ticker.replace(/"/g, '').trim();
+        }
+
+        if (rawData.nome && (rawData.nome.includes('"') || rawData.nome.trim() !== rawData.nome)) {
+          warnings.push({
+            type: 'EXTRA_QUOTES',
+            line: lineNumber,
+            field: 'nome',
+            value: rawData.nome,
+            message: `Possível problema de formatação no nome: '${rawData.nome}'`
+          });
+          rawData.nome = rawData.nome.replace(/"/g, '').trim();
+        }
+
+        processedData.push(rawData);
+      });
+
+    } catch (error) {
+      errors.push({
+        type: 'INVALID_TYPE',
+        line: 0,
+        message: `Erro ao processar CSV: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      });
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      processedData
+    };
+  };
+
+  // Validar CSV de proventos
+  const validateProventosCSV = (csvText: string): CSVValidationResult => {
+    const errors: CSVValidationError[] = [];
+    const warnings: CSVValidationError[] = [];
+    const processedData: any[] = [];
+
+    try {
+      const lines = csvText.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        errors.push({
+          type: 'EMPTY_ROW',
+          line: 1,
+          message: 'Arquivo CSV vazio ou sem dados'
+        });
+        return { isValid: false, errors, warnings, processedData };
+      }
+
+      const expectedHeaders = ['ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes'];
+      const headers = lines[0].split('|').map(h => h.trim());
+
+      // Validar headers
+      const missingHeaders = expectedHeaders.filter(header => !headers.includes(header));
+      if (missingHeaders.length > 0) {
+        errors.push({
+          type: 'MISSING_FIELDS',
+          line: 1,
+          message: `Headers obrigatórios ausentes: ${missingHeaders.join(', ')}`
+        });
+      }
+
+      // Processar cada linha de dados
+      lines.slice(1).forEach((line, index) => {
+        const lineNumber = index + 2;
+        
+        if (!line.trim()) {
+          warnings.push({
+            type: 'EMPTY_ROW',
+            line: lineNumber,
+            message: 'Linha vazia ignorada'
+          });
+          return;
+        }
+
+        const rawData = csvToArray(`${lines[0]}\n${line}`)[0];
+        
+        // Validações específicas
+        const requiredFields = ['ativoTicker', 'data', 'valor', 'tipo'];
+        requiredFields.forEach(field => {
+          if (!rawData[field] || rawData[field].toString().trim() === '') {
+            errors.push({
+              type: 'EMPTY_REQUIRED_FIELD',
+              line: lineNumber,
+              field,
+              message: `Campo obrigatório '${field}' está vazio`
+            });
+          }
+        });
+
+        // Validar tipo de provento
+        if (rawData.tipo) {
+          const normalizedType = rawData.tipo.toLowerCase().trim();
+          const typeMapping: { [key: string]: string } = {
+            'dividendo': 'dividendo',
+            'dividendos': 'dividendo',
+            'jcp': 'jcp',
+            'rendimento': 'rendimento',
+            'rendimentos': 'rendimento'
+          };
+          
+          if (typeMapping[normalizedType]) {
+            rawData.tipo = typeMapping[normalizedType];
+          } else {
+            errors.push({
+              type: 'INVALID_TYPE',
+              line: lineNumber,
+              field: 'tipo',
+              value: rawData.tipo,
+              expected: Object.keys(typeMapping).join(', '),
+              message: `Tipo de provento inválido: '${rawData.tipo}'. Tipos aceitos: ${Object.keys(typeMapping).join(', ')}`
+            });
+          }
+        }
+
+        // Validar valor
+        if (rawData.valor && rawData.valor !== '') {
+          const numValue = parseFloat(rawData.valor);
+          if (isNaN(numValue)) {
+            errors.push({
+              type: 'INVALID_NUMBER',
+              line: lineNumber,
+              field: 'valor',
+              value: rawData.valor,
+              message: `Valor numérico inválido: '${rawData.valor}'`
+            });
+          } else {
+            rawData.valor = numValue;
+          }
+        }
+
+        processedData.push(rawData);
+      });
+
+    } catch (error) {
+      errors.push({
+        type: 'INVALID_TYPE',
+        line: 0,
+        message: `Erro ao processar CSV: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      });
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      processedData
+    };
+  };
 
   // Converter array para CSV
   const arrayToCSV = (data: any[], headers: string[]): string => {
@@ -422,36 +762,37 @@ export const useFerramentas = (): UseFerramentasReturn => {
         AsyncStorage.getItem('carteira-investimentos-movimentacoes')
       ]);
 
-      // Headers para cada tipo de arquivo CSV (sem ID)
-      const ativosHeaders = ['ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes', 'createdAt', 'updatedAt'];
-      const proventosHeaders = ['ativoId', 'ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes', 'createdAt', 'updatedAt'];
-      const movimentacoesHeaders = ['ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'valorTotal', 'taxas', 'segmento', 'observacao', 'createdAt', 'updatedAt'];
+      // Headers para cada tipo de arquivo CSV (sem ID, createdAt e updatedAt)
+      const ativosHeaders = ['ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes'];
+      const proventosHeaders = ['ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes'];
+      const movimentacoesHeaders = ['ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'segmento', 'observacao'];
 
       // Converter dados para CSV
       const ativos = ativosData ? JSON.parse(ativosData) : [];
       const proventos = proventosData ? JSON.parse(proventosData) : [];
       const movimentacoes = movimentacoesData ? JSON.parse(movimentacoesData) : [];
 
-      // Processar datas para formato DD/MM/AAAA antes da exportação
-      const processedAtivos = ativos.map((ativo: any) => ({
-        ...ativo,
-        createdAt: formatDateToDDMMAAAA(ativo.createdAt),
-        updatedAt: formatDateToDDMMAAAA(ativo.updatedAt)
-      }));
+      // Processar dados para exportação (sem createdAt e updatedAt)
+      const processedAtivos = ativos.map((ativo: any) => {
+        const { createdAt, updatedAt, ...ativoWithoutDates } = ativo;
+        return ativoWithoutDates;
+      });
 
-      const processedProventos = proventos.map((provento: any) => ({
-        ...provento,
-        data: formatDateToDDMMAAAA(provento.data),
-        createdAt: formatDateToDDMMAAAA(provento.createdAt),
-        updatedAt: formatDateToDDMMAAAA(provento.updatedAt)
-      }));
+      const processedProventos = proventos.map((provento: any) => {
+        const { createdAt, updatedAt, ...proventoWithoutDates } = provento;
+        return {
+          ...proventoWithoutDates,
+          data: formatDateToDDMMAAAA(provento.data)
+        };
+      });
 
-      const processedMovimentacoes = movimentacoes.map((mov: any) => ({
-        ...mov,
-        data: formatDateToDDMMAAAA(mov.data),
-        createdAt: formatDateToDDMMAAAA(mov.createdAt),
-        updatedAt: formatDateToDDMMAAAA(mov.updatedAt)
-      }));
+      const processedMovimentacoes = movimentacoes.map((mov: any) => {
+        const { createdAt, updatedAt, ...movWithoutDates } = mov;
+        return {
+          ...movWithoutDates,
+          data: formatDateToDDMMAAAA(mov.data)
+        };
+      });
 
       const ativosCSV = arrayToCSV(processedAtivos, ativosHeaders);
       const proventosCSV = arrayToCSV(processedProventos, proventosHeaders);
@@ -480,10 +821,10 @@ export const useFerramentas = (): UseFerramentasReturn => {
 
   // Gerar templates CSV para referência
   const generateCSVTemplates = useCallback((): { ativos: string; proventos: string; movimentacoes: string } => {
-    // Headers para cada tipo de arquivo CSV (sem ID)
-    const ativosHeaders = ['ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes', 'createdAt', 'updatedAt'];
-    const proventosHeaders = ['ativoId', 'ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes', 'createdAt', 'updatedAt'];
-    const movimentacoesHeaders = ['ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'valorTotal', 'taxas', 'segmento', 'observacao', 'createdAt', 'updatedAt'];
+    // Headers para cada tipo de arquivo CSV (sem ID, createdAt e updatedAt)
+    const ativosHeaders = ['ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes'];
+    const proventosHeaders = ['ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes'];
+    const movimentacoesHeaders = ['ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'segmento', 'observacao'];
 
     // Dados de exemplo para templates (sem ID e com datas no formato DD/MM/AAAA)
     const exemploAtivos = [{
@@ -497,21 +838,16 @@ export const useFerramentas = (): UseFerramentasReturn => {
       administrador: '',
       status: 'ativo',
       site: '',
-      observacoes: 'Exemplo de ativo',
-      createdAt: '01/01/2024',
-      updatedAt: '01/01/2024'
+      observacoes: 'Exemplo de ativo'
     }];
 
     const exemploProventos = [{
-      ativoId: 1,
       ativoTicker: 'PETR4',
       ativoNome: 'Petrobras PN',
       data: '15/06/2024',
       valor: 150.50,
       tipo: 'dividendo',
-      observacoes: 'Exemplo de provento',
-      createdAt: '15/06/2024',
-      updatedAt: '15/06/2024'
+      observacoes: 'Exemplo de provento'
     }];
 
     const exemploMovimentacoes = [{
@@ -521,12 +857,8 @@ export const useFerramentas = (): UseFerramentasReturn => {
       operacao: 'compra',
       quantidade: 100,
       valorUnitario: 30.50,
-      valorTotal: 3050.00,
-      taxas: 10.00,
       segmento: 'Energia',
-      observacao: 'Exemplo de movimentação',
-      createdAt: '01/01/2024',
-      updatedAt: '01/01/2024'
+      observacao: 'Exemplo de movimentação'
     }];
 
     return {
@@ -539,46 +871,121 @@ export const useFerramentas = (): UseFerramentasReturn => {
   // Importar dados em formato CSV
   const importDataCSV = useCallback(async (csvData: { ativos?: string; proventos?: string; movimentacoes?: string }): Promise<boolean> => {
     try {
+      console.log('📥 Iniciando importação de dados CSV...');
+      console.log('📋 Dados recebidos:', Object.keys(csvData));
+      
       let importSuccess = false;
+      const importDate = new Date().toISOString(); // Data de importação para todos os registros
 
-      // Importar ativos
+      // Validar e importar ativos
       if (csvData.ativos) {
-        const ativosArray = csvToArray(csvData.ativos);
-        if (ativosArray.length > 0) {
-          // Converter strings para números quando necessário e processar datas
-          const processedAtivos = ativosArray.map((ativo: any, index: number) => ({
+        console.log('🔍 Validando dados de ativos...');
+        console.log(`📊 Tamanho do conteúdo de ativos: ${csvData.ativos.length} caracteres`);
+        
+        const validation = validateAtivosCSV(csvData.ativos);
+        
+        console.log(`✅ Validação de ativos concluída: ${validation.isValid}`);
+        console.log(`❌ Erros encontrados: ${validation.errors.length}`);
+        console.log(`⚠️ Avisos encontrados: ${validation.warnings.length}`);
+        console.log(`📋 Registros processados: ${validation.processedData.length}`);
+        
+        if (!validation.isValid) {
+          const errorMessages = validation.errors.map(err => `Linha ${err.line}: ${err.message}`).join('\n');
+          console.log('❌ Erros de validação:', errorMessages);
+          Alert.alert(
+            'Erros na validação de Ativos',
+            `Foram encontrados os seguintes erros:\n\n${errorMessages}`,
+            [{ text: 'OK' }]
+          );
+          return false;
+        }
+
+        if (validation.warnings.length > 0) {
+          const warningMessages = validation.warnings.map(warn => `Linha ${warn.line}: ${warn.message}`).join('\n');
+          console.log('⚠️ Avisos de validação de Ativos:', warningMessages);
+        }
+
+        if (validation.processedData.length > 0) {
+          console.log('💾 Preparando dados para salvamento...');
+          const processedAtivos = validation.processedData.map((ativo: any, index: number) => ({
             ...ativo,
             id: Date.now() + index, // Gerar novo ID baseado no timestamp
-            preco: parseFloat(ativo.preco) || 0,
-            quantidade: parseFloat(ativo.quantidade) || 0,
-            valorTotal: parseFloat(ativo.valorTotal) || 0,
-            createdAt: parseDDMMAAAAToISO(ativo.createdAt) || new Date().toISOString(),
-            updatedAt: parseDDMMAAAAToISO(ativo.updatedAt) || new Date().toISOString()
+            createdAt: importDate, // Data de importação
+            updatedAt: '' // Deixar vazio conforme solicitado
           }));
+          
+          console.log('🔧 Exemplo do primeiro ativo processado:', JSON.stringify(processedAtivos[0], null, 2));
+          console.log('💾 Salvando no AsyncStorage...');
+          
           await AsyncStorage.setItem('carteira-investimentos-ativos', JSON.stringify(processedAtivos));
+          console.log(`✅ ${processedAtivos.length} ativos importados com sucesso`);
           importSuccess = true;
+        } else {
+          console.log('⚠️ Nenhum ativo válido foi processado para importação');
         }
       }
 
-      // Importar proventos
+      // Validar e importar proventos
       if (csvData.proventos) {
-        const proventosArray = csvToArray(csvData.proventos);
-        if (proventosArray.length > 0) {
-          const processedProventos = proventosArray.map((provento: any, index: number) => ({
+        console.log('🔍 Validando dados de proventos...');
+        console.log(`📊 Tamanho do conteúdo de proventos: ${csvData.proventos.length} caracteres`);
+        
+        const validation = validateProventosCSV(csvData.proventos);
+        
+        console.log(`✅ Validação de proventos concluída: ${validation.isValid}`);
+        console.log(`❌ Erros encontrados: ${validation.errors.length}`);
+        console.log(`⚠️ Avisos encontrados: ${validation.warnings.length}`);
+        console.log(`📋 Registros processados: ${validation.processedData.length}`);
+        
+        if (validation.errors.length > 0) {
+          console.log('❌ Detalhes dos erros de validação:', validation.errors);
+          console.log('❌ Erros de validação de Proventos - Mostrando Dialog...');
+          
+          // Converter erros para o formato do dialog
+          const dialogErrors: ValidationError[] = validation.errors.map(err => ({
+            type: err.type,
+            line: err.line,
+            field: err.field,
+            value: err.value,
+            expected: err.expected,
+            message: err.message
+          }));
+          
+          // Mostrar dialog com erros
+          setValidationErrors(dialogErrors);
+          setShowValidationDialog(true);
+          
+          console.log('❌ Dialog de erro configurado para exibição');
+          return false;
+        }
+
+        if (validation.warnings.length > 0) {
+          const warningMessages = validation.warnings.map(warn => `Linha ${warn.line}: ${warn.message}`).join('\n');
+          console.log('⚠️ Avisos de validação de Proventos:', warningMessages);
+        }
+
+        if (validation.processedData.length > 0) {
+          console.log('💾 Preparando dados de proventos para salvamento...');
+          const processedProventos = validation.processedData.map((provento: any, index: number) => ({
             ...provento,
             id: Date.now() + index, // Gerar novo ID baseado no timestamp
-            ativoId: parseInt(provento.ativoId) || 0,
-            valor: parseFloat(provento.valor) || 0,
             data: parseDDMMAAAAToISO(provento.data) || provento.data,
-            createdAt: parseDDMMAAAAToISO(provento.createdAt) || new Date().toISOString(),
-            updatedAt: parseDDMMAAAAToISO(provento.updatedAt) || new Date().toISOString()
+            createdAt: importDate, // Data de importação
+            updatedAt: '' // Deixar vazio conforme solicitado
           }));
+          
+          console.log('🔧 Exemplo do primeiro provento processado:', JSON.stringify(processedProventos[0], null, 2));
+          console.log('💾 Salvando proventos no AsyncStorage...');
+          
           await AsyncStorage.setItem('carteira-investimentos-proventos', JSON.stringify(processedProventos));
+          console.log(`✅ ${processedProventos.length} proventos importados com sucesso`);
           importSuccess = true;
+        } else {
+          console.log('⚠️ Nenhum provento válido foi processado para importação');
         }
       }
 
-      // Importar movimentações
+      // Importar movimentações (mantendo lógica básica por enquanto)
       if (csvData.movimentacoes) {
         const movimentacoesArray = csvToArray(csvData.movimentacoes);
         if (movimentacoesArray.length > 0) {
@@ -587,24 +994,31 @@ export const useFerramentas = (): UseFerramentasReturn => {
             id: Date.now() + index, // Gerar novo ID baseado no timestamp
             quantidade: parseFloat(mov.quantidade) || 0,
             valorUnitario: parseFloat(mov.valorUnitario) || 0,
-            valorTotal: parseFloat(mov.valorTotal) || 0,
-            taxas: parseFloat(mov.taxas) || 0,
             data: parseDDMMAAAAToISO(mov.data) || mov.data,
-            createdAt: parseDDMMAAAAToISO(mov.createdAt) || new Date().toISOString(),
-            updatedAt: parseDDMMAAAAToISO(mov.updatedAt) || new Date().toISOString()
+            createdAt: importDate, // Data de importação
+            updatedAt: '' // Deixar vazio conforme solicitado
           }));
           await AsyncStorage.setItem('carteira-investimentos-movimentacoes', JSON.stringify(processedMovimentacoes));
+          console.log(`✅ ${processedMovimentacoes.length} movimentações importadas com sucesso`);
           importSuccess = true;
         }
       }
 
       if (importSuccess) {
-        // Recarregar dados locais
+        console.log('🔄 Dados importados com sucesso, iniciando recarga...');
+        
+        // Recarregar dados locais  
         await loadTiposAtivos();
+        
         console.log('✅ Dados CSV importados com sucesso');
-        Alert.alert('Sucesso', 'Dados CSV importados com sucesso');
+        Alert.alert(
+          'Sucesso', 
+          'Dados CSV importados com sucesso!\n\n📊 Navegue para outras telas para ver os novos dados.',
+          [{ text: 'OK' }]
+        );
         return true;
       } else {
+        console.log('⚠️ Nenhum dado foi importado');
         Alert.alert('Aviso', 'Nenhum dado válido foi encontrado nos arquivos CSV');
         return false;
       }
@@ -713,54 +1127,185 @@ export const useFerramentas = (): UseFerramentasReturn => {
     }
   }, [generateCSVTemplates, selectExportDirectory]);
 
+  // Função auxiliar para leitura robusta de arquivos (sem dependências da expo-file-system)
+  const readFileRobust = useCallback(async (fileUri: string, fileName: string): Promise<string> => {
+    console.log('📁 Iniciando leitura robusta...');
+    console.log(`   URI: ${fileUri}`);
+    console.log(`   Nome: ${fileName}`);
+    
+    // Método 1: Fetch API (funciona para todos os tipos de URI)
+    try {
+      console.log('🔧 Tentando Fetch API...');
+      const response = await fetch(fileUri);
+      
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      
+      const content = await response.text();
+      console.log(`✅ Fetch API sucesso: ${content.length} chars`);
+      
+      // Verificar se o conteúdo não está vazio
+      if (!content || content.trim().length === 0) {
+        throw new Error('Arquivo está vazio ou não pôde ser lido');
+      }
+      
+      return content;
+      
+    } catch (fetchError) {
+      console.log('❌ Fetch API falhou, tentando XMLHttpRequest...');
+      
+      // Método 2: XMLHttpRequest (fallback)
+      try {
+        const content = await new Promise<string>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open('GET', fileUri, true);
+          xhr.responseType = 'text';
+          
+          xhr.onload = () => {
+            if (xhr.status === 200) {
+              resolve(xhr.responseText);
+            } else {
+              reject(new Error(`XMLHttpRequest falhou: ${xhr.status}`));
+            }
+          };
+          
+          xhr.onerror = () => reject(new Error('XMLHttpRequest error'));
+          xhr.ontimeout = () => reject(new Error('XMLHttpRequest timeout'));
+          
+          xhr.timeout = 10000; // 10 segundos
+          xhr.send();
+        });
+        
+        console.log(`✅ XMLHttpRequest sucesso: ${content.length} chars`);
+        return content;
+        
+      } catch (xhrError) {
+        console.log('❌ XMLHttpRequest também falhou...');
+        
+        // Método 3: FileReader com Blob (último recurso)
+        try {
+          console.log('🔧 Tentando FileReader...');
+          
+          // Primeiro, obter o blob
+          const blobResponse = await fetch(fileUri);
+          if (!blobResponse.ok) {
+            throw new Error(`Blob fetch falhou: ${blobResponse.status}`);
+          }
+          
+          const blob = await blobResponse.blob();
+          
+          const content = await new Promise<string>((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result as string);
+            reader.onerror = () => reject(new Error('FileReader error'));
+            reader.readAsText(blob, 'utf-8');
+          });
+          
+          console.log(`✅ FileReader sucesso: ${content.length} chars`);
+          return content;
+          
+        } catch (readerError) {
+          const fetchMsg = fetchError instanceof Error ? fetchError.message : String(fetchError);
+          const xhrMsg = xhrError instanceof Error ? xhrError.message : String(xhrError);
+          const readerMsg = readerError instanceof Error ? readerError.message : String(readerError);
+          
+          throw new Error(`Todos os métodos falharam:\n1. Fetch: ${fetchMsg}\n2. XHR: ${xhrMsg}\n3. FileReader: ${readerMsg}`);
+        }
+      }
+    }
+  }, []);
+
   // Selecionar e importar arquivos CSV
   const selectAndImportCSVFiles = useCallback(async (): Promise<boolean> => {
     try {
+      console.log('📱 Iniciando seleção de arquivos...');
+      
       const result = await DocumentPicker.getDocumentAsync({
-        type: 'text/csv',
+        type: ['text/csv', 'text/plain'],
         multiple: true,
-        copyToCacheDirectory: true,
+        copyToCacheDirectory: true, // CRUCIAL para Content URIs do Android
       });
 
+      console.log('📱 Resultado da seleção:', result);
+
       if (result.canceled) {
+        console.log('❌ Seleção cancelada pelo usuário');
         return false;
       }
 
       const csvData: { ativos?: string; proventos?: string; movimentacoes?: string } = {};
       
+      console.log(`📁 Arquivos selecionados: ${result.assets.length}`);
+      
       // Processar arquivos selecionados
       for (const file of result.assets) {
-        // Por enquanto, vamos simular a leitura do arquivo
-        // Em uma implementação real, usaríamos FileSystem.readAsStringAsync(file.uri)
-        const fileName = file.name.toLowerCase();
-        
-        Alert.alert(
-          'Arquivo Selecionado',
-          `Arquivo: ${file.name}\nTipo: ${file.mimeType}\nTamanho: ${file.size} bytes\n\n🔜 Em breve: leitura real do conteúdo.`
-        );
-        
-        // Simular conteúdo para demonstração
-        if (fileName.includes('ativos')) {
-          csvData.ativos = 'id,ticker,nome,tipo\n1,PETR4,Petrobras PN,acao';
-        } else if (fileName.includes('proventos')) {
-          csvData.proventos = 'id,ativoId,ativoTicker,data,valor,tipo\n1,1,PETR4,2024-06-15,150.50,dividendo';
-        } else if (fileName.includes('movimentacoes')) {
-          csvData.movimentacoes = 'id,ativo,data,tipo,operacao,quantidade,valorUnitario\n1,PETR4,2024-01-01,acao,compra,100,30.50';
+        try {
+          console.log(`📄 Processando arquivo: ${file.name}`);
+          console.log(`📄 URI do arquivo: ${file.uri}`);
+          
+          // Ler o conteúdo real do arquivo
+          let fileContent;
+          try {
+            // Usar a API mais simples e compatível
+            console.log('� Lendo conteúdo do arquivo...');
+            fileContent = await readFileRobust(file.uri, file.name);
+            console.log(`✅ Arquivo lido com sucesso: ${fileContent.length} caracteres`);
+          } catch (readError) {
+            console.error(`❌ Erro ao ler arquivo ${file.name}:`, readError);
+            const errorMessage = readError instanceof Error ? readError.message : String(readError);
+            Alert.alert('Erro', `Não foi possível ler o arquivo ${file.name}. Erro: ${errorMessage}`);
+            continue;
+          }
+          
+          const fileName = file.name.toLowerCase();
+          
+          console.log(`📝 Conteúdo lido do arquivo ${file.name} (${fileContent.length} caracteres)`);
+          
+          // Identificar tipo de arquivo baseado no nome EXATO
+          if (fileName === 'ativos.csv') {
+            csvData.ativos = fileContent;
+            console.log('✅ Arquivo identificado como: ATIVOS');
+          } else if (fileName === 'proventos.csv') {
+            csvData.proventos = fileContent;
+            console.log('✅ Arquivo identificado como: PROVENTOS');
+          } else if (fileName === 'movimentacoes.csv') {
+            csvData.movimentacoes = fileContent;
+            console.log('✅ Arquivo identificado como: MOVIMENTAÇÕES');
+          } else {
+            console.log(`❌ Arquivo com nome incorreto: ${file.name}`);
+            console.log('📋 Nomes aceitos: ativos.csv, proventos.csv, movimentacoes.csv');
+            Alert.alert(
+              'Nome de arquivo incorreto', 
+              `O arquivo "${file.name}" não possui um nome válido.\n\nNomes aceitos:\n• ativos.csv\n• proventos.csv\n• movimentacoes.csv\n\nRenomeie o arquivo e tente novamente.`
+            );
+            continue;
+          }
+          
+        } catch (fileError) {
+          console.error(`❌ Erro ao processar arquivo ${file.name}:`, fileError);
+          Alert.alert(
+            'Erro na leitura',
+            `Não foi possível processar o arquivo ${file.name}.\n\nErro: ${fileError instanceof Error ? fileError.message : 'Erro desconhecido'}`
+          );
+          continue;
         }
       }
 
       if (Object.keys(csvData).length === 0) {
         Alert.alert(
-          'Arquivos não reconhecidos',
-          'Os arquivos selecionados não seguem o padrão esperado.\n\nNomes esperados:\n• ativos.csv\n• proventos.csv\n• movimentacoes.csv'
+          'Nenhum arquivo válido',
+          'Nenhum arquivo com nome válido foi encontrado.\n\nNomes aceitos:\n• ativos.csv\n• proventos.csv\n• movimentacoes.csv'
         );
         return false;
       }
 
+      console.log(`📋 Arquivos identificados: ${Object.keys(csvData).join(', ')}`);
       return await importDataCSV(csvData);
+      
     } catch (error) {
-      console.error('Erro na seleção de arquivos:', error);
-      Alert.alert('Erro', 'Falha ao selecionar ou importar arquivos');
+      console.error('❌ Erro na seleção de arquivos:', error);
+      Alert.alert('Erro', `Falha ao selecionar ou importar arquivos.\n\nErro: ${error instanceof Error ? error.message : 'Erro desconhecido'}`);
       return false;
     }
   }, [importDataCSV]);
@@ -785,6 +1330,11 @@ export const useFerramentas = (): UseFerramentasReturn => {
     loading,
     saving,
     clearing,
+    
+    // Validation errors dialog
+    validationErrors,
+    showValidationDialog,
+    clearValidationErrors,
     
     // Actions para tipos de ativos
     createTipoAtivo,

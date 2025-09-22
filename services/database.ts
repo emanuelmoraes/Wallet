@@ -499,10 +499,10 @@ class DatabaseService {
       const proventos = await this.getProventosFromStorage();
       const ativos = await this.getAtivosFromStorage();
       
-      // Verificar se o ativo existe
-      const ativo = ativos.find(a => a.id === input.ativoId);
+      // Verificar se o ativo existe pelo ticker
+      const ativo = ativos.find(a => a.ticker === input.ativoTicker);
       if (!ativo) {
-        throw new Error('Ativo não encontrado');
+        throw new Error(`Ativo não encontrado com ticker: ${input.ativoTicker}`);
       }
 
       const id = await this.generateProventoId();
@@ -510,8 +510,7 @@ class DatabaseService {
 
       const novoProvento: Provento = {
         id,
-        ativoId: input.ativoId,
-        ativoTicker: ativo.ticker,
+        ativoTicker: input.ativoTicker,
         ativoNome: ativo.nome,
         data: input.data,
         valor: input.valor,
@@ -524,7 +523,7 @@ class DatabaseService {
       proventos.push(novoProvento);
       await this.saveProventos(proventos);
 
-      console.log(`✅ Provento criado com ID: ${id}`);
+      console.log(`✅ Provento criado com ID: ${id} para ativo ${input.ativoTicker}`);
       return id;
     } catch (error) {
       console.error('❌ Erro ao criar provento:', error);
@@ -541,8 +540,8 @@ class DatabaseService {
       
       // Aplicar filtros se fornecidos
       if (filter) {
-        if (filter.ativoId) {
-          proventos = proventos.filter(p => p.ativoId === filter.ativoId);
+        if (filter.ativoTicker) {
+          proventos = proventos.filter(p => p.ativoTicker === filter.ativoTicker);
         }
         if (filter.tipo) {
           proventos = proventos.filter(p => p.tipo === filter.tipo);
@@ -595,17 +594,16 @@ class DatabaseService {
         throw new Error('Provento não encontrado');
       }
 
-      // Verificar se o ativo existe
-      const ativo = ativos.find(a => a.id === input.ativoId);
+      // Verificar se o ativo existe pelo ticker
+      const ativo = ativos.find(a => a.ticker === input.ativoTicker);
       if (!ativo) {
-        throw new Error('Ativo não encontrado');
+        throw new Error(`Ativo não encontrado com ticker: ${input.ativoTicker}`);
       }
 
       const now = new Date().toISOString();
       proventos[index] = {
         ...proventos[index],
-        ativoId: input.ativoId,
-        ativoTicker: ativo.ticker,
+        ativoTicker: input.ativoTicker,
         ativoNome: ativo.nome,
         data: input.data,
         valor: input.valor,
@@ -702,8 +700,6 @@ class DatabaseService {
       const id = await this.generateMovimentacaoId();
       const now = new Date().toISOString();
 
-      const valorTotal = input.valorUnitario * input.quantidade;
-
       const novaMovimentacao: Movimentacao = {
         id,
         ativo: input.ativo.toUpperCase(),
@@ -711,7 +707,6 @@ class DatabaseService {
         segmento: input.segmento,
         data: input.data,
         valorUnitario: input.valorUnitario,
-        valorTotal,
         operacao: input.operacao,
         observacao: input.observacao,
         createdAt: now,
@@ -754,10 +749,10 @@ class DatabaseService {
           movimentacoes = movimentacoes.filter(m => m.data <= filter.dataFim!);
         }
         if (filter.valorMinimo) {
-          movimentacoes = movimentacoes.filter(m => m.valorTotal >= filter.valorMinimo!);
+          movimentacoes = movimentacoes.filter(m => (m.quantidade * m.valorUnitario) >= filter.valorMinimo!);
         }
         if (filter.valorMaximo) {
-          movimentacoes = movimentacoes.filter(m => m.valorTotal <= filter.valorMaximo!);
+          movimentacoes = movimentacoes.filter(m => (m.quantidade * m.valorUnitario) <= filter.valorMaximo!);
         }
       }
 
@@ -795,7 +790,6 @@ class DatabaseService {
       }
 
       const now = new Date().toISOString();
-      const valorTotal = input.valorUnitario * input.quantidade;
 
       movimentacoes[index] = {
         ...movimentacoes[index],
@@ -804,7 +798,6 @@ class DatabaseService {
         segmento: input.segmento,
         data: input.data,
         valorUnitario: input.valorUnitario,
-        valorTotal,
         operacao: input.operacao,
         observacao: input.observacao,
         updatedAt: now,
@@ -851,11 +844,11 @@ class DatabaseService {
 
       const totalInvestido = movimentacoes
         .filter(m => m.operacao === 'compra' || m.operacao === 'subscricao')
-        .reduce((sum, m) => sum + m.valorTotal, 0);
+        .reduce((sum, m) => sum + (m.quantidade * m.valorUnitario), 0);
 
       const totalRecebido = movimentacoes
         .filter(m => m.operacao === 'venda')
-        .reduce((sum, m) => sum + m.valorTotal, 0);
+        .reduce((sum, m) => sum + (m.quantidade * m.valorUnitario), 0);
 
       const saldoLiquido = totalRecebido - totalInvestido;
       const totalOperacoes = movimentacoes.length;
@@ -866,7 +859,7 @@ class DatabaseService {
         subscricao: movimentacoes.filter(m => m.operacao === 'subscricao').length,
       };
 
-      const volumeTotal = movimentacoes.reduce((sum, m) => sum + m.valorTotal, 0);
+      const volumeTotal = movimentacoes.reduce((sum, m) => sum + (m.quantidade * m.valorUnitario), 0);
 
       return {
         totalInvestido,

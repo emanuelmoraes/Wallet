@@ -53,7 +53,7 @@ export default function ProventosScreen() {
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   const [formData, setFormData] = useState<Partial<CreateProventoInput>>({
-    ativoId: 0,
+    ativoTicker: '',
     data: new Date().toISOString().split('T')[0],
     valor: undefined,
     tipo: 'dividendo',
@@ -131,7 +131,7 @@ export default function ProventosScreen() {
 
   const resetForm = () => {
     setFormData({
-      ativoId: 0,
+      ativoTicker: '',
       data: new Date().toISOString().split('T')[0],
       valor: undefined,
       tipo: 'dividendo',
@@ -144,7 +144,7 @@ export default function ProventosScreen() {
     if (provento) {
       setEditingId(provento.id);
       setFormData({
-        ativoId: provento.ativoId,
+        ativoTicker: provento.ativoTicker,
         data: provento.data,
         valor: provento.valor,
         tipo: provento.tipo,
@@ -162,14 +162,14 @@ export default function ProventosScreen() {
   };
 
   const handleSaveProvento = async () => {
-    if (!formData.ativoId || !formData.valor || formData.valor <= 0) {
+    if (!formData.ativoTicker || !formData.valor || formData.valor <= 0) {
       return;
     }
 
     setSaving(true);
 
     const proventoData: CreateProventoInput = {
-      ativoId: formData.ativoId,
+      ativoTicker: formData.ativoTicker,
       data: formData.data || new Date().toISOString().split('T')[0],
       valor: formData.valor,
       tipo: formData.tipo || 'dividendo',
@@ -534,8 +534,8 @@ export default function ProventosScreen() {
                   {ativos.map((ativo) => (
                     <Button
                       key={ativo.id}
-                      mode={formData.ativoId === ativo.id ? "contained" : "outlined"}
-                      onPress={() => setFormData(prev => ({ ...prev, ativoId: ativo.id }))}
+                      mode={formData.ativoTicker === ativo.ticker ? "contained" : "outlined"}
+                      onPress={() => setFormData(prev => ({ ...prev, ativoTicker: ativo.ticker }))}
                       style={styles.ativoButton}
                       compact
                     >
@@ -622,7 +622,7 @@ export default function ProventosScreen() {
                   mode="contained"
                   onPress={handleSaveProvento}
                   loading={saving}
-                  disabled={saving || !formData.ativoId || !formData.valor}
+                  disabled={saving || !formData.ativoTicker || !formData.valor}
                   style={[styles.modalButton, { backgroundColor: primaryGreen }]}
                   textColor="#FFFFFF"
                 >

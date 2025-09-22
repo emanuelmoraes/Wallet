@@ -28,6 +28,9 @@ export default function FerramentasScreen() {
     loading,
     saving,
     clearing,
+    validationErrors,
+    showValidationDialog,
+    clearValidationErrors,
     createTipoAtivo,
     updateTipoAtivo,
     deleteTipoAtivo,
@@ -542,7 +545,7 @@ export default function FerramentasScreen() {
               <Text style={styles.csvModalText}>
                 {csvModalType === 'export' 
                   ? 'Escolha o formato e local para exportar seus dados:'
-                  : 'Selecione os arquivos CSV para importar:'}
+                  : 'Para importar dados, prepare arquivos CSV com nomes específicos:\n\n📄 Tipos aceitos:\n• ativos.csv - Para importar ativos\n• proventos.csv - Para importar proventos\n• movimentacoes.csv - Para importar movimentações\n\n💡 Dica: Você pode selecionar múltiplos arquivos de uma vez.'}
               </Text>
 
               <View style={styles.modalActions}>
@@ -624,6 +627,56 @@ export default function FerramentasScreen() {
               </Card.Actions>
             </Card>
           </Modal>
+
+          {/* Dialog de Erros de Validação */}
+          <Dialog visible={showValidationDialog} onDismiss={clearValidationErrors}>
+            <Dialog.Icon icon="alert-circle" size={30} />
+            <Dialog.Title style={{ textAlign: 'center' }}>
+              Erros de Validação CSV
+            </Dialog.Title>
+            <Dialog.Content>
+              <Text variant="bodyMedium" style={{ marginBottom: 16 }}>
+                Foram encontrados erros no arquivo CSV que precisam ser corrigidos:
+              </Text>
+              <ScrollView style={{ maxHeight: 300 }}>
+                {validationErrors.map((error, index) => (
+                  <Card key={index} style={{ marginBottom: 8, backgroundColor: '#ffebee' }}>
+                    <Card.Content style={{ paddingVertical: 8 }}>
+                      <Text variant="labelMedium" style={{ color: '#c62828', fontWeight: 'bold' }}>
+                        Linha {error.line}
+                      </Text>
+                      <Text variant="bodySmall" style={{ color: '#d32f2f', marginTop: 4 }}>
+                        {error.message}
+                      </Text>
+                      {error.field && (
+                        <Text variant="bodySmall" style={{ color: '#666', marginTop: 2 }}>
+                          Campo: {error.field}
+                        </Text>
+                      )}
+                      {error.value && (
+                        <Text variant="bodySmall" style={{ color: '#666', marginTop: 2 }}>
+                          Valor encontrado: "{error.value}"
+                        </Text>
+                      )}
+                      {error.expected && (
+                        <Text variant="bodySmall" style={{ color: '#2e7d32', marginTop: 2 }}>
+                          Valores aceitos: {error.expected}
+                        </Text>
+                      )}
+                    </Card.Content>
+                  </Card>
+                ))}
+              </ScrollView>
+              <Text variant="bodySmall" style={{ marginTop: 16, color: '#666', fontStyle: 'italic' }}>
+                💡 Corrija os erros no arquivo CSV e tente importar novamente.
+              </Text>
+            </Dialog.Content>
+            <Dialog.Actions>
+              <Button onPress={clearValidationErrors}>
+                Fechar
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
 
         </Portal>
       </SafeAreaView>
