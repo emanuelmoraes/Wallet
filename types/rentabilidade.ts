@@ -23,6 +23,6 @@ export interface RentabilidadeStats {
 }
 
 export interface PrecoAtualInput {
-  ativo: string;
+  ticker: string;
   precoAtual: number;
 }

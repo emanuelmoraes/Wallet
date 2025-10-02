@@ -7,7 +7,6 @@ import React, { useState } from 'react';
 import { Alert, ScrollView, View } from 'react-native';
 import {
   ActivityIndicator,
-  Avatar,
   Button,
   Card,
   Dialog,
@@ -47,26 +46,34 @@ export default function FerramentasScreen() {
     refreshTiposAtivos,
   } = useFerramentas();
 
-  // Estados para dialogs e modals
-  const [dialogVisible, setDialogVisible] = useState(false);
-  const [dialogType, setDialogType] = useState<'clear' | 'import' | 'export' | null>(null);
+  // Estados para dialogs individuais (4 dialogs)
+  const [exportDataDialogVisible, setExportDataDialogVisible] = useState(false);
+  const [exportTemplatesDialogVisible, setExportTemplatesDialogVisible] = useState(false);
+  const [importDataDialogVisible, setImportDataDialogVisible] = useState(false);
+  const [clearDataDialogVisible, setClearDataDialogVisible] = useState(false);
+  
+  // Estado para dialog de resultado (sucesso/erro)
+  const [resultDialogVisible, setResultDialogVisible] = useState(false);
+  const [resultDialogData, setResultDialogData] = useState<{
+    type: 'success' | 'error';
+    title: string;
+    message: string;
+  } | null>(null);
+  
+  // Estados para modals
   const [tipoModalVisible, setTipoModalVisible] = useState(false);
   const [editingTipo, setEditingTipo] = useState<TipoAtivo | null>(null);
   const [tipoForm, setTipoForm] = useState({ nome: '', icon: '' });
-  const [csvModalVisible, setCsvModalVisible] = useState(false);
-  const [csvModalType, setCsvModalType] = useState<'import' | 'export' | null>(null);
-  const [directoryModalVisible, setDirectoryModalVisible] = useState(false);
-  const [directoryModalType, setDirectoryModalType] = useState<'templates' | 'dados' | null>(null);
 
-  // Funções de controle de modais e dialogs
-  const handleOpenDialog = (type: 'clear' | 'import' | 'export') => {
-    setDialogType(type);
-    setDialogVisible(true);
+  // Funções de controle de dialogs individuais
+  const showResultDialog = (type: 'success' | 'error', title: string, message: string) => {
+    setResultDialogData({ type, title, message });
+    setResultDialogVisible(true);
   };
 
-  const handleCloseDialog = () => {
-    setDialogVisible(false);
-    setDialogType(null);
+  const closeResultDialog = () => {
+    setResultDialogVisible(false);
+    setResultDialogData(null);
   };
 
   const handleOpenTipoModal = (tipo?: TipoAtivo) => {
@@ -86,22 +93,7 @@ export default function FerramentasScreen() {
     setTipoForm({ nome: '', icon: '' });
   };
 
-  const handleCloseCsvModal = () => {
-    setCsvModalVisible(false);
-    setCsvModalType(null);
-  };
-
-  const handleOpenDirectoryModal = (type: 'templates' | 'dados') => {
-    setDirectoryModalType(type);
-    setDirectoryModalVisible(true);
-  };
-
-  const handleCloseDirectoryModal = () => {
-    setDirectoryModalVisible(false);
-    setDirectoryModalType(null);
-  };
-
-  // Funções de ação
+  // Funções de ação para cada botão
   const handleSaveTipo = async () => {
     if (!tipoForm.nome.trim()) {
       Alert.alert('Erro', 'Nome do tipo é obrigatório');
@@ -137,37 +129,53 @@ export default function FerramentasScreen() {
   };
 
   const handleClearData = async () => {
+    setClearDataDialogVisible(false);
     const success = await clearAllData();
+    
     if (success) {
-      handleCloseDialog();
+      showResultDialog(
+        'success',
+        'Dados Limpos com Sucesso!',
+        'Todos os dados do aplicativo foram removidos.\n\n✅ Ativos, proventos e movimentações foram deletados.'
+      );
+    } else {
+      showResultDialog(
+        'error',
+        'Erro ao Limpar Dados',
+        'Ocorreu um erro ao tentar limpar os dados. Por favor, tente novamente.'
+      );
     }
   };
 
-  const handleImportData = () => {
-    setCsvModalType('import');
-    setCsvModalVisible(true);
-    handleCloseDialog();
+  const handleImportData = async () => {
+    setImportDataDialogVisible(false);
+    const success = await selectAndImportCSVFiles();
+    
+    if (success) {
+      showResultDialog(
+        'success',
+        'Importação Concluída!',
+        'Os dados foram importados com sucesso!\n\n✅ Navegue para as outras telas para visualizar os dados importados.'
+      );
+    } else {
+      showResultDialog(
+        'error',
+        'Erro na Importação',
+        'Ocorreu um erro durante a importação dos dados.\n\nVerifique se os arquivos CSV estão no formato correto e tente novamente.'
+      );
+    }
   };
 
-  const handleExportTemplates = () => {
+  const handleExportTemplates = async () => {
     console.log('Botão Export Templates clicado');
-    handleOpenDirectoryModal('templates');
+    setExportTemplatesDialogVisible(false);
+    await exportTemplatesWithDirectory();
   };
 
-  const handleExportData = () => {
+  const handleExportData = async () => {
     console.log('Botão Export Data clicado');
-    handleOpenDirectoryModal('dados');
-  };
-
-  // Funções de exportação
-  const handleConfirmDirectory = async () => {
-    handleCloseDirectoryModal();
-
-    if (directoryModalType === 'templates') {
-      await exportTemplatesWithDirectory();
-    } else if (directoryModalType === 'dados') {
-      await exportDataWithDirectory();
-    }
+    setExportDataDialogVisible(false);
+    await exportDataWithDirectory();
   };
 
   const exportTemplatesWithDirectory = async () => {
@@ -274,30 +282,6 @@ export default function FerramentasScreen() {
       Alert.alert('Erro', `Erro ao preparar dados: ${errorMessage}`, [{ text: 'OK' }]);
     }
   };
-
-  // Função auxiliar para obter conteúdo do dialog
-  const getDialogContent = () => {
-    switch (dialogType) {
-      case 'clear':
-        return {
-          title: 'Limpar Todos os Dados',
-          content: 'Esta ação irá deletar TODOS os dados do aplicativo. Esta ação não pode ser desfeita.',
-          actionText: 'Limpar Dados',
-          action: handleClearData,
-        };
-      case 'import':
-        return {
-          title: 'Importar Dados',
-          content: 'Deseja importar dados de um arquivo CSV?',
-          actionText: 'Importar',
-          action: handleImportData,
-        };
-      default:
-        return null;
-    }
-  };
-
-  const dialogContent = getDialogContent();
 
   if (loading) {
     return (
@@ -410,7 +394,7 @@ export default function FerramentasScreen() {
               <View style={styles.actionButtonsGrid}>
                 <Button
                   mode="contained"
-                  onPress={handleExportData}
+                  onPress={() => setExportDataDialogVisible(true)}
                   style={[styles.actionButton, { backgroundColor: primaryGreen }]}
                   contentStyle={styles.actionButtonContent}
                   icon="download"
@@ -420,7 +404,7 @@ export default function FerramentasScreen() {
 
                 <Button
                   mode="contained"
-                  onPress={handleExportTemplates}
+                  onPress={() => setExportTemplatesDialogVisible(true)}
                   style={[styles.actionButton, { backgroundColor: secondaryGreen }]}
                   contentStyle={styles.actionButtonContent}
                   icon="file-download"
@@ -430,7 +414,7 @@ export default function FerramentasScreen() {
 
                 <Button
                   mode="outlined"
-                  onPress={() => handleOpenDialog('import')}
+                  onPress={() => setImportDataDialogVisible(true)}
                   style={styles.actionButton}
                   contentStyle={styles.actionButtonContent}
                   icon="upload"
@@ -440,7 +424,7 @@ export default function FerramentasScreen() {
 
                 <Button
                   mode="outlined"
-                  onPress={() => handleOpenDialog('clear')}
+                  onPress={() => setClearDataDialogVisible(true)}
                   style={[styles.actionButton, { borderColor: '#EF4444' }]}
                   contentStyle={styles.actionButtonContent}
                   textColor="#EF4444"
@@ -454,20 +438,179 @@ export default function FerramentasScreen() {
         </ScrollView>
 
         <Portal>
-          {/* Dialog de confirmação */}
-          <Dialog visible={dialogVisible} onDismiss={handleCloseDialog}>
-            <Dialog.Title>{dialogContent?.title}</Dialog.Title>
+          {/* DIALOG 1: Exportar Dados */}
+          <Dialog 
+            visible={exportDataDialogVisible} 
+            onDismiss={() => setExportDataDialogVisible(false)}
+            style={styles.customDialog}
+          >
+            <Dialog.Icon icon="download" size={45} color={primaryGreen} />
+            <Dialog.Title style={styles.dialogTitle}>Exportar Dados</Dialog.Title>
             <Dialog.Content>
-              <Text>{dialogContent?.content}</Text>
+              <Text style={styles.dialogText}>
+                Seus dados serão exportados em formato CSV.{'\n\n'}
+                📄 <Text style={styles.dialogTextBold}>Arquivos que serão baixados:</Text>{'\n'}
+                • ativos.csv{'\n'}
+                • proventos.csv{'\n'}
+                • movimentacoes.csv{'\n\n'}
+                💾 Os arquivos serão salvos na sua pasta de Downloads.
+              </Text>
             </Dialog.Content>
-            <Dialog.Actions>
-              <Button onPress={handleCloseDialog}>Cancelar</Button>
+            <Dialog.Actions style={styles.dialogActions}>
               <Button 
-                onPress={dialogContent?.action}
-                loading={clearing && dialogType === 'clear'}
-                disabled={clearing && dialogType === 'clear'}
+                onPress={() => setExportDataDialogVisible(false)}
+                textColor="#64748B"
               >
-                {dialogContent?.actionText}
+                Cancelar
+              </Button>
+              <Button 
+                onPress={handleExportData}
+                mode="contained"
+                buttonColor={primaryGreen}
+                icon="download"
+              >
+                Exportar
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+
+          {/* DIALOG 2: Exportar Templates */}
+          <Dialog 
+            visible={exportTemplatesDialogVisible} 
+            onDismiss={() => setExportTemplatesDialogVisible(false)}
+            style={styles.customDialog}
+          >
+            <Dialog.Icon icon="file-download" size={45} color={secondaryGreen} />
+            <Dialog.Title style={styles.dialogTitle}>Exportar Templates</Dialog.Title>
+            <Dialog.Content>
+              <Text style={styles.dialogText}>
+                Templates CSV de exemplo serão baixados para ajudá-lo na importação.{'\n\n'}
+                📄 <Text style={styles.dialogTextBold}>Arquivos template:</Text>{'\n'}
+                • ativos_template.csv{'\n'}
+                • proventos_template.csv{'\n'}
+                • movimentacoes_template.csv{'\n\n'}
+                💡 Use esses templates como referência para criar seus arquivos de importação.
+              </Text>
+            </Dialog.Content>
+            <Dialog.Actions style={styles.dialogActions}>
+              <Button 
+                onPress={() => setExportTemplatesDialogVisible(false)}
+                textColor="#64748B"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onPress={handleExportTemplates}
+                mode="contained"
+                buttonColor={secondaryGreen}
+                icon="file-download"
+              >
+                Baixar Templates
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+
+          {/* DIALOG 3: Importar Dados */}
+          <Dialog 
+            visible={importDataDialogVisible} 
+            onDismiss={() => setImportDataDialogVisible(false)}
+            style={styles.customDialog}
+          >
+            <Dialog.Icon icon="upload" size={45} color={primaryGreen} />
+            <Dialog.Title style={styles.dialogTitle}>Importar Dados CSV</Dialog.Title>
+            <Dialog.Content>
+              <Text style={styles.dialogText}>
+                Selecione os arquivos CSV para importar seus dados.{'\n\n'}
+                📄 <Text style={styles.dialogTextBold}>Tipos de arquivo aceitos:</Text>{'\n'}
+                • ativos.csv - Para importar ativos{'\n'}
+                • proventos.csv - Para importar proventos{'\n'}
+                • movimentacoes.csv - Para importar movimentações{'\n\n'}
+                💡 <Text style={styles.dialogTextBold}>Dica:</Text> Você pode selecionar múltiplos arquivos de uma vez.
+              </Text>
+            </Dialog.Content>
+            <Dialog.Actions style={styles.dialogActions}>
+              <Button 
+                onPress={() => setImportDataDialogVisible(false)}
+                textColor="#64748B"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onPress={handleImportData}
+                mode="contained"
+                buttonColor={primaryGreen}
+                icon="upload"
+              >
+                Selecionar Arquivos
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+
+          {/* DIALOG 4: Limpar Dados */}
+          <Dialog 
+            visible={clearDataDialogVisible} 
+            onDismiss={() => setClearDataDialogVisible(false)}
+            style={styles.customDialog}
+          >
+            <Dialog.Icon icon="alert-circle" size={45} color="#EF4444" />
+            <Dialog.Title style={styles.dialogTitle}>Limpar Todos os Dados</Dialog.Title>
+            <Dialog.Content>
+              <Text style={[styles.dialogText, styles.dialogWarningText]}>
+                <Text style={styles.dialogTextBold}>⚠️ ATENÇÃO:</Text> Esta ação irá deletar <Text style={styles.dialogTextBold}>TODOS</Text> os dados do aplicativo.{'\n\n'}
+                <Text style={styles.dialogTextBold}>Serão removidos:</Text>{'\n'}
+                • Todos os ativos{'\n'}
+                • Todos os proventos{'\n'}
+                • Todas as movimentações{'\n\n'}
+                ❌ <Text style={styles.dialogTextBold}>Esta ação não pode ser desfeita!</Text>
+              </Text>
+            </Dialog.Content>
+            <Dialog.Actions style={styles.dialogActions}>
+              <Button 
+                onPress={() => setClearDataDialogVisible(false)}
+                mode="contained"
+                buttonColor="#64748B"
+              >
+                Cancelar
+              </Button>
+              <Button 
+                onPress={handleClearData}
+                mode="contained"
+                buttonColor="#EF4444"
+                loading={clearing}
+                disabled={clearing}
+                icon="delete-sweep"
+              >
+                Limpar Dados
+              </Button>
+            </Dialog.Actions>
+          </Dialog>
+
+          {/* DIALOG 5: Resultado (Sucesso ou Erro) */}
+          <Dialog 
+            visible={resultDialogVisible} 
+            onDismiss={closeResultDialog}
+            style={styles.customDialog}
+          >
+            <Dialog.Icon 
+              icon={resultDialogData?.type === 'success' ? 'check-circle' : 'alert-circle'} 
+              size={50} 
+              color={resultDialogData?.type === 'success' ? primaryGreen : '#EF4444'} 
+            />
+            <Dialog.Title style={styles.dialogTitle}>
+              {resultDialogData?.title}
+            </Dialog.Title>
+            <Dialog.Content>
+              <Text style={styles.dialogText}>
+                {resultDialogData?.message}
+              </Text>
+            </Dialog.Content>
+            <Dialog.Actions style={styles.dialogActions}>
+              <Button 
+                onPress={closeResultDialog}
+                mode="contained"
+                buttonColor={resultDialogData?.type === 'success' ? primaryGreen : '#EF4444'}
+              >
+                OK
               </Button>
             </Dialog.Actions>
           </Dialog>
@@ -529,103 +672,6 @@ export default function FerramentasScreen() {
                 </Button>
               </View>
             </ScrollView>
-          </Modal>
-
-          {/* Modal de CSV */}
-          <Modal
-            visible={csvModalVisible}
-            onDismiss={handleCloseCsvModal}
-            contentContainerStyle={styles.csvModal}
-          >
-            <ScrollView contentContainerStyle={styles.csvModalContent}>
-              <Text style={styles.csvModalTitle}>
-                {csvModalType === 'export' ? 'Exportar Dados CSV' : 'Importar Dados CSV'}
-              </Text>
-
-              <Text style={styles.csvModalText}>
-                {csvModalType === 'export' 
-                  ? 'Escolha o formato e local para exportar seus dados:'
-                  : 'Para importar dados, prepare arquivos CSV com nomes específicos:\n\n📄 Tipos aceitos:\n• ativos.csv - Para importar ativos\n• proventos.csv - Para importar proventos\n• movimentacoes.csv - Para importar movimentações\n\n💡 Dica: Você pode selecionar múltiplos arquivos de uma vez.'}
-              </Text>
-
-              <View style={styles.modalActions}>
-                <Button
-                  mode="outlined"
-                  onPress={handleCloseCsvModal}
-                  style={styles.modalButton}
-                >
-                  Cancelar
-                </Button>
-                {csvModalType === 'export' ? (
-                  <Button
-                    mode="contained"
-                    onPress={async () => {
-                      handleCloseCsvModal();
-                      await exportDataCSVToDirectory();
-                    }}
-                    style={styles.modalButton}
-                    buttonColor={primaryGreen}
-                    icon="download"
-                  >
-                    Exportar
-                  </Button>
-                ) : (
-                  <Button
-                    mode="contained"
-                    onPress={async () => {
-                      handleCloseCsvModal();
-                      await selectAndImportCSVFiles();
-                    }}
-                    style={styles.modalButton}
-                    buttonColor={primaryGreen}
-                    icon="upload"
-                  >
-                    Selecionar e Importar
-                  </Button>
-                )}
-              </View>
-            </ScrollView>
-          </Modal>
-
-          {/* Modal para seleção de diretório */}
-          <Modal
-            visible={directoryModalVisible}
-            onDismiss={handleCloseDirectoryModal}
-            contentContainerStyle={styles.directoryModal}
-          >
-            <Card style={styles.directoryCard}>
-              <Card.Title
-                title={`${directoryModalType === 'templates' ? 'Baixar Templates' : 'Exportar Dados'}`}
-                subtitle="Os arquivos serão baixados automaticamente"
-                left={(props) => <Avatar.Icon {...props} icon="download" />}
-              />
-              
-              <Card.Content>
-                <Text style={styles.directoryModalText}>
-                  {directoryModalType === 'templates' 
-                    ? 'Os templates CSV serão baixados para sua pasta de Downloads padrão. Você poderá escolher o local final no seu gerenciador de arquivos.'
-                    : 'Seus dados serão exportados e baixados para sua pasta de Downloads padrão. Você poderá escolher o local final no seu gerenciador de arquivos.'
-                  }
-                </Text>
-              </Card.Content>
-              
-              <Card.Actions style={styles.directoryActions}>
-                <Button
-                  mode="outlined"
-                  onPress={handleCloseDirectoryModal}
-                  style={styles.directoryCancelButton}
-                >
-                  Cancelar
-                </Button>
-                <Button
-                  mode="contained"
-                  onPress={handleConfirmDirectory}
-                  style={styles.directoryConfirmButton}
-                >
-                  {directoryModalType === 'templates' ? 'Baixar Templates' : 'Exportar Dados'}
-                </Button>
-              </Card.Actions>
-            </Card>
           </Modal>
 
           {/* Dialog de Erros de Validação */}

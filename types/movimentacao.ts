@@ -3,7 +3,7 @@ export type SegmentoMovimentacao = 'acao' | 'fii' | 'fi_infra' | 'etf' | 'renda_
 
 export interface Movimentacao {
   id: number;
-  ativo: string; // Ticker do ativo
+  ticker: string; // Ticker do ativo
   quantidade: number;
   segmento: SegmentoMovimentacao;
   data: string;
@@ -15,7 +15,7 @@ export interface Movimentacao {
 }
 
 export interface CreateMovimentacaoInput {
-  ativo: string;
+  ticker: string;
   quantidade: number;
   segmento: SegmentoMovimentacao;
   data: string;
@@ -26,7 +26,7 @@ export interface CreateMovimentacaoInput {
 
 export interface UpdateMovimentacaoInput {
   id: number;
-  ativo: string;
+  ticker: string;
   quantidade: number;
   segmento: SegmentoMovimentacao;
   data: string;
@@ -36,7 +36,7 @@ export interface UpdateMovimentacaoInput {
 }
 
 export interface MovimentacaoFilter {
-  ativo?: string;
+  ticker?: string;
   segmento?: SegmentoMovimentacao;
   operacao?: TipoOperacao;
   dataInicio?: string;

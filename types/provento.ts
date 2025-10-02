@@ -3,7 +3,6 @@ export type TipoProvento = 'rendimento' | 'jcp' | 'dividendo';
 export interface Provento {
   id: number;
   ativoTicker: string;
-  ativoNome: string;
   data: string;
   valor: number;
   tipo: TipoProvento;

@@ -511,7 +511,6 @@ class DatabaseService {
       const novoProvento: Provento = {
         id,
         ativoTicker: input.ativoTicker,
-        ativoNome: ativo.nome,
         data: input.data,
         valor: input.valor,
         tipo: input.tipo,
@@ -604,7 +603,6 @@ class DatabaseService {
       proventos[index] = {
         ...proventos[index],
         ativoTicker: input.ativoTicker,
-        ativoNome: ativo.nome,
         data: input.data,
         valor: input.valor,
         tipo: input.tipo,
@@ -702,7 +700,7 @@ class DatabaseService {
 
       const novaMovimentacao: Movimentacao = {
         id,
-        ativo: input.ativo.toUpperCase(),
+        ticker: input.ticker.toUpperCase(),
         quantidade: input.quantidade,
         segmento: input.segmento,
         data: input.data,
@@ -733,8 +731,8 @@ class DatabaseService {
       
       // Aplicar filtros se fornecidos
       if (filter) {
-        if (filter.ativo) {
-          movimentacoes = movimentacoes.filter(m => m.ativo.toLowerCase().includes(filter.ativo!.toLowerCase()));
+        if (filter.ticker) {
+          movimentacoes = movimentacoes.filter(m => m.ticker.toLowerCase().includes(filter.ticker!.toLowerCase()));
         }
         if (filter.segmento) {
           movimentacoes = movimentacoes.filter(m => m.segmento === filter.segmento);
@@ -793,7 +791,7 @@ class DatabaseService {
 
       movimentacoes[index] = {
         ...movimentacoes[index],
-        ativo: input.ativo.toUpperCase(),
+        ticker: input.ticker.toUpperCase(),
         quantidade: input.quantidade,
         segmento: input.segmento,
         data: input.data,

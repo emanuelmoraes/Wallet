@@ -50,21 +50,39 @@ export const useRentabilidade = (): UseRentabilidadeReturn => {
   // Função para calcular preço médio de compras de um ativo
   const calcularPrecoMedio = useCallback((movimentacoes: Movimentacao[], ativo: string): number => {
     const compras = movimentacoes.filter(mov => 
-      mov.ativo === ativo && mov.operacao === 'compra'
+      mov.ticker.toLowerCase() === ativo.toLowerCase() && mov.operacao === 'compra'
     );
     
     if (compras.length === 0) return 0;
-    
-    const totalValor = compras.reduce((sum, mov) => sum + mov.valorTotal, 0);
+
+    const totalValor = compras.reduce((sum, mov) => sum + (mov.valorUnitario * mov.quantidade), 0);
     const totalQuantidade = compras.reduce((sum, mov) => sum + mov.quantidade, 0);
     
     return totalQuantidade > 0 ? totalValor / totalQuantidade : 0;
   }, []);
 
+  // Função para calcular quantidade total baseada nas movimentações
+  const calcularQuantidadeTotal = useCallback((movimentacoes: Movimentacao[], ativo: string): number => {
+    const movimentacoesAtivo = movimentacoes.filter(mov => 
+      mov.ticker.toLowerCase() === ativo.toLowerCase()
+    );
+    
+    let quantidade = 0;
+    for (const mov of movimentacoesAtivo) {
+      if (mov.operacao === 'compra') {
+        quantidade += mov.quantidade;
+      } else if (mov.operacao === 'venda') {
+        quantidade -= mov.quantidade;
+      }
+    }
+    
+    return Math.max(0, quantidade); // Não permitir quantidade negativa
+  }, []);
+
   // Função para calcular total de proventos de um ativo
-  const calcularTotalProventos = useCallback((proventos: Provento[], ativoId: number): number => {
+  const calcularTotalProventos = useCallback((proventos: Provento[], ticker: string): number => {
     return proventos
-      .filter(provento => provento.ativoId === ativoId)
+      .filter(provento => provento.ativoTicker === ticker)
       .reduce((sum, provento) => sum + provento.valor, 0);
   }, []);
 
@@ -88,18 +106,19 @@ export const useRentabilidade = (): UseRentabilidadeReturn => {
       // Processar cada ativo
       for (const ativo of ativos) {
         const precoMedio = calcularPrecoMedio(movimentacoes, ativo.ticker);
+        const quantidadeTotal = calcularQuantidadeTotal(movimentacoes, ativo.ticker);
         const precoAtual = precosAtuais.get(ativo.ticker) || ativo.preco; // Usar preço atual se disponível, senão usar preço do cadastro
-        const totalProventos = calcularTotalProventos(proventos, ativo.id);
+        const totalProventos = calcularTotalProventos(proventos, ativo.ticker);
         
-        const investido = precoMedio * ativo.quantidade;
-        const atual = precoAtual * ativo.quantidade;
+        const investido = precoMedio * quantidadeTotal;
+        const atual = precoAtual * quantidadeTotal;
         const lucroOuPrejuizo = atual - investido;
         const percentualLucroOuPrejuizo = investido > 0 ? (atual / investido) - 1 : 0;
         const rentabilidadeComProventos = investido > 0 ? ((atual + totalProventos) / investido) - 1 : 0;
 
         dadosRentabilidade.push({
           ativo: ativo.ticker,
-          quantidade: ativo.quantidade,
+          quantidade: quantidadeTotal,
           precoMedio,
           precoAtual,
           investido,
@@ -140,7 +159,7 @@ export const useRentabilidade = (): UseRentabilidadeReturn => {
     } finally {
       setLoading(false);
     }
-  }, [calcularPrecoMedio, calcularTotalProventos, precosAtuais]);
+  }, [calcularPrecoMedio, calcularQuantidadeTotal, calcularTotalProventos, precosAtuais]);
 
   // Atualizar preço atual de um ativo
   const updatePrecoAtual = useCallback(async (input: PrecoAtualInput): Promise<boolean> => {
@@ -149,13 +168,13 @@ export const useRentabilidade = (): UseRentabilidadeReturn => {
       
       // Atualizar o mapa de preços atuais
       const novosPrecos = new Map(precosAtuais);
-      novosPrecos.set(input.ativo, input.precoAtual);
+      novosPrecos.set(input.ticker, input.precoAtual);
       setPrecosAtuais(novosPrecos);
       
       // Recalcular dados
       await processarDadosRentabilidade();
       
-      console.log(`✅ Preço atual atualizado para ${input.ativo}: R$ ${input.precoAtual}`);
+      console.log(`✅ Preço atual atualizado para ${input.ticker}: R$ ${input.precoAtual}`);
       return true;
       
     } catch (error) {
@@ -175,7 +194,7 @@ export const useRentabilidade = (): UseRentabilidadeReturn => {
       // Atualizar o mapa de preços atuais
       const novosPrecos = new Map(precosAtuais);
       precos.forEach(preco => {
-        novosPrecos.set(preco.ativo, preco.precoAtual);
+        novosPrecos.set(preco.ticker, preco.precoAtual);
       });
       setPrecosAtuais(novosPrecos);
       

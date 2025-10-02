@@ -60,7 +60,7 @@ export default function MovimentacoesScreen() {
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
   const [formData, setFormData] = useState<Partial<CreateMovimentacaoInput>>({
-    ativo: '',
+    ticker: '',
     quantidade: undefined,
     segmento: 'acao',
     data: getTodayDateString(),
@@ -142,7 +142,7 @@ export default function MovimentacoesScreen() {
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(movimentacao =>
-        movimentacao.ativo.toLowerCase().includes(query) ||
+        movimentacao.ticker.toLowerCase().includes(query) ||
         movimentacao.segmento.toLowerCase().includes(query) ||
         movimentacao.operacao.toLowerCase().includes(query)
       );
@@ -153,7 +153,7 @@ export default function MovimentacoesScreen() {
 
   const resetForm = () => {
     setFormData({
-      ativo: '',
+      ticker: '',
       quantidade: undefined,
       segmento: 'acao',
       data: getTodayDateString(),
@@ -168,7 +168,7 @@ export default function MovimentacoesScreen() {
     if (movimentacao) {
       setEditingId(movimentacao.id);
       setFormData({
-        ativo: movimentacao.ativo,
+        ticker: movimentacao.ticker,
         quantidade: movimentacao.quantidade,
         segmento: movimentacao.segmento,
         data: movimentacao.data,
@@ -188,14 +188,14 @@ export default function MovimentacoesScreen() {
   };
 
   const handleSaveMovimentacao = async () => {
-    if (!formData.ativo || !formData.quantidade || !formData.valorUnitario || formData.quantidade <= 0 || formData.valorUnitario <= 0) {
+    if (!formData.ticker || !formData.quantidade || !formData.valorUnitario || formData.quantidade <= 0 || formData.valorUnitario <= 0) {
       return;
     }
 
     setSaving(true);
 
     const movimentacaoData: CreateMovimentacaoInput = {
-      ativo: formData.ativo,
+      ticker: formData.ticker,
       quantidade: formData.quantidade,
       segmento: formData.segmento || 'acao',
       data: formData.data || getTodayDateString(),
@@ -306,15 +306,6 @@ export default function MovimentacoesScreen() {
       case 'cripto': return 'bitcoin';
       default: return 'chart-pie';
     }
-  };
-
-  const getOperacaoLabel = (operacao: TipoOperacao) => {
-    const labels = {
-      compra: 'Compra',
-      venda: 'Venda',
-      subscricao: 'Subscrição'
-    };
-    return labels[operacao];
   };
 
   const getSegmentoLabel = (segmento: SegmentoMovimentacao) => {
@@ -442,7 +433,7 @@ export default function MovimentacoesScreen() {
                 </View>
                 <View style={sharedStyles.cardTitleContainer}>
                   <Text variant="titleMedium" style={sharedStyles.cardTitle}>
-                    {movimentacao.ativo}
+                    {movimentacao.ticker}
                   </Text>
                   <Text variant="bodySmall" style={sharedStyles.cardSubtitle}>
                     {getSegmentoLabel(movimentacao.segmento)}
@@ -471,8 +462,8 @@ export default function MovimentacoesScreen() {
                 <View style={styles.detailRow}>
                   <View style={styles.detailItem}>
                     <Text variant="bodySmall" style={sharedStyles.valueLabel}>Operação</Text>
-                    <Text variant="bodyMedium" style={[sharedStyles.valueAmount, { color: getOperacaoColor(movimentacao.operacao) }]}>
-                      {getOperacaoLabel(movimentacao.operacao)}
+                    <Text variant="bodyMedium" style={sharedStyles.valueAmount}>
+                      {movimentacao.operacao}
                     </Text>
                   </View>
                   <View style={styles.detailItem}>
@@ -564,8 +555,8 @@ export default function MovimentacoesScreen() {
 
               <TextInput
                 label="Ativo (Ticker)"
-                value={formData.ativo || ''}
-                onChangeText={(text) => setFormData(prev => ({ ...prev, ativo: text.toUpperCase() }))}
+                value={formData.ticker || ''}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, ticker: text.toUpperCase() }))}
                 style={styles.input}
                 mode="flat"
               />
@@ -644,7 +635,7 @@ export default function MovimentacoesScreen() {
                       style={styles.operacaoButton}
                       compact
                     >
-                      {getOperacaoLabel(operacao)}
+                      {operacao}
                     </Button>
                   ))}
                 </View>
@@ -673,7 +664,7 @@ export default function MovimentacoesScreen() {
                   mode="contained"
                   onPress={handleSaveMovimentacao}
                   loading={saving}
-                  disabled={saving || !formData.ativo || !formData.quantidade || !formData.valorUnitario}
+                  disabled={saving || !formData.ticker || !formData.quantidade || !formData.valorUnitario}
                   style={[styles.modalButton, { backgroundColor: primaryGreen }]}
                   textColor="#FFFFFF"
                 >

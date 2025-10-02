@@ -121,7 +121,6 @@ export default function ProventosScreen() {
       const query = searchQuery.toLowerCase();
       filtered = filtered.filter(provento =>
         provento.ativoTicker.toLowerCase().includes(query) ||
-        provento.ativoNome.toLowerCase().includes(query) ||
         provento.tipo.toLowerCase().includes(query)
       );
     }
@@ -408,11 +407,8 @@ export default function ProventosScreen() {
                   />
                 </View>
                 <View style={sharedStyles.cardTitleContainer}>
-                  <Text style={[sharedStyles.cardTitle, { color: '#1E293B' }]}>
+                  <Text style={sharedStyles.cardTitle}>
                     {provento.ativoTicker}
-                  </Text>
-                  <Text style={[sharedStyles.cardSubtitle, { color: '#64748B' }]}>
-                    {provento.ativoNome}
                   </Text>
                 </View>
                 <View style={styles.cardActions}>
@@ -528,22 +524,15 @@ export default function ProventosScreen() {
                 style={{ marginBottom: 16, color: primaryGreen }}
               >{editingId ? 'Editar Provento' : 'Novo Provento'}</Title>
 
-              <View style={styles.formGroup}>
-                <Text variant="bodySmall" style={styles.pickerLabel}>Ativo *</Text>
-                <ScrollView style={styles.ativoSelector} nestedScrollEnabled horizontal>
-                  {ativos.map((ativo) => (
-                    <Button
-                      key={ativo.id}
-                      mode={formData.ativoTicker === ativo.ticker ? "contained" : "outlined"}
-                      onPress={() => setFormData(prev => ({ ...prev, ativoTicker: ativo.ticker }))}
-                      style={styles.ativoButton}
-                      compact
-                    >
-                      {ativo.ticker} - {ativo.nome}
-                    </Button>
-                  ))}
-                </ScrollView>
-              </View>
+                <TextInput
+                  label="Código do Ativo *"
+                  value={formData.ativoTicker || ''}
+                  onChangeText={(text) => setFormData(prev => ({ ...prev, ativoTicker: text.toUpperCase() }))}
+                  style={styles.input}
+                  mode="flat"
+                  placeholder="Ex: BBAS3, PETR4, VALE3"
+                  autoCapitalize="characters"
+                />
 
               <TextInput
                 label="Data"

@@ -594,7 +594,7 @@ export const useFerramentas = (): UseFerramentasReturn => {
         return { isValid: false, errors, warnings, processedData };
       }
 
-      const expectedHeaders = ['ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes'];
+      const expectedHeaders = ['ativoTicker', 'data', 'valor', 'tipo', 'observacoes'];
       const headers = lines[0].split('|').map(h => h.trim());
 
       // Validar headers
@@ -695,6 +695,180 @@ export const useFerramentas = (): UseFerramentasReturn => {
     };
   };
 
+  // Validar CSV de movimentações
+  const validateMovimentacoesCSV = (csvText: string): CSVValidationResult => {
+    const errors: CSVValidationError[] = [];
+    const warnings: CSVValidationError[] = [];
+    const processedData: any[] = [];
+
+    try {
+      const lines = csvText.split('\n').filter(line => line.trim());
+      
+      if (lines.length < 2) {
+        errors.push({
+          type: 'EMPTY_ROW',
+          line: 1,
+          message: 'Arquivo CSV vazio ou sem dados'
+        });
+        return { isValid: false, errors, warnings, processedData };
+      }
+
+      const expectedHeaders = ['ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'segmento', 'observacao'];
+      const headers = lines[0].split('|').map(h => h.trim());
+
+      // Validar headers
+      const missingHeaders = expectedHeaders.filter(header => !headers.includes(header));
+      if (missingHeaders.length > 0) {
+        errors.push({
+          type: 'MISSING_FIELDS',
+          line: 1,
+          message: `Headers obrigatórios ausentes: ${missingHeaders.join(', ')}`
+        });
+      }
+
+      // Processar cada linha de dados
+      lines.slice(1).forEach((line, index) => {
+        const lineNumber = index + 2;
+        
+        if (!line.trim()) {
+          warnings.push({
+            type: 'EMPTY_ROW',
+            line: lineNumber,
+            message: 'Linha vazia ignorada'
+          });
+          return;
+        }
+
+        const rawData = csvToArray(`${lines[0]}\n${line}`)[0];
+        
+        // Validações específicas
+        const requiredFields = ['ativo', 'data', 'quantidade', 'valorUnitario', 'operacao'];
+        requiredFields.forEach(field => {
+          if (!rawData[field] || rawData[field].toString().trim() === '') {
+            errors.push({
+              type: 'EMPTY_REQUIRED_FIELD',
+              line: lineNumber,
+              field,
+              message: `Campo obrigatório '${field}' está vazio`
+            });
+          }
+        });
+
+        // Mapear 'ativo' para 'ticker' (corrigir inconsistência)
+        if (rawData.ativo) {
+          rawData.ticker = rawData.ativo;
+          delete rawData.ativo; // Remover campo antigo após mapeamento
+        }
+
+        // Validar tipo de operação
+        if (rawData.operacao) {
+          const normalizedOperacao = rawData.operacao.toLowerCase().trim();
+          const operacaoMapping: { [key: string]: string } = {
+            'compra': 'compra',
+            'venda': 'venda',
+            'subscrição': 'subscricao',
+            'subscricao': 'subscricao',
+            'assinatura': 'subscricao'
+          };
+          
+          if (operacaoMapping[normalizedOperacao]) {
+            rawData.operacao = operacaoMapping[normalizedOperacao];
+          } else {
+            errors.push({
+              type: 'INVALID_TYPE',
+              line: lineNumber,
+              field: 'operacao',
+              value: rawData.operacao,
+              expected: Object.keys(operacaoMapping).join(', '),
+              message: `Tipo de operação inválido: '${rawData.operacao}'. Operações aceitas: ${Object.keys(operacaoMapping).join(', ')}`
+            });
+          }
+        }
+
+        // Validar segmento
+        if (rawData.segmento || rawData.tipo) {
+          // Usar 'tipo' se 'segmento' não estiver presente (compatibilidade)
+          const segmentoValue = rawData.segmento || rawData.tipo;
+          const normalizedSegmento = segmentoValue.toLowerCase().trim();
+          
+          const segmentoMapping: { [key: string]: string } = {
+            'ação': 'acao',
+            'acao': 'acao',
+            'fii': 'fii',
+            'fi_infra': 'fi_infra',
+            'fi-infra': 'fi_infra',
+            'etf': 'etf',
+            'renda_fixa': 'renda_fixa',
+            'renda fixa': 'renda_fixa',
+            'cripto': 'cripto',
+            'criptomoeda': 'cripto'
+          };
+          
+          if (segmentoMapping[normalizedSegmento]) {
+            rawData.segmento = segmentoMapping[normalizedSegmento];
+          } else {
+            warnings.push({
+              type: 'INVALID_TYPE',
+              line: lineNumber,
+              field: 'segmento',
+              value: segmentoValue,
+              message: `Segmento desconhecido: '${segmentoValue}'. Usando valor original.`
+            });
+            rawData.segmento = normalizedSegmento;
+          }
+          
+          // Remover campo 'tipo' se foi usado
+          if (rawData.tipo && rawData.segmento) {
+            delete rawData.tipo;
+          }
+        }
+
+        // Validar números
+        ['quantidade', 'valorUnitario'].forEach(field => {
+          if (rawData[field] && rawData[field] !== '') {
+            const numValue = parseFloat(rawData[field]);
+            if (isNaN(numValue)) {
+              errors.push({
+                type: 'INVALID_NUMBER',
+                line: lineNumber,
+                field,
+                value: rawData[field],
+                message: `Valor numérico inválido no campo '${field}': '${rawData[field]}'`
+              });
+            } else {
+              rawData[field] = numValue;
+            }
+          }
+        });
+
+        // Limpar campos de texto
+        if (rawData.ticker) {
+          rawData.ticker = rawData.ticker.toString().trim().toUpperCase();
+        }
+
+        if (rawData.observacao) {
+          rawData.observacao = rawData.observacao.toString().trim();
+        }
+
+        processedData.push(rawData);
+      });
+
+    } catch (error) {
+      errors.push({
+        type: 'INVALID_TYPE',
+        line: 0,
+        message: `Erro ao processar CSV: ${error instanceof Error ? error.message : 'Erro desconhecido'}`
+      });
+    }
+
+    return {
+      isValid: errors.length === 0,
+      errors,
+      warnings,
+      processedData
+    };
+  };
+
   // Converter array para CSV
   const arrayToCSV = (data: any[], headers: string[]): string => {
     if (!data || data.length === 0) {
@@ -764,7 +938,7 @@ export const useFerramentas = (): UseFerramentasReturn => {
 
       // Headers para cada tipo de arquivo CSV (sem ID, createdAt e updatedAt)
       const ativosHeaders = ['ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes'];
-      const proventosHeaders = ['ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes'];
+      const proventosHeaders = ['ativoTicker', 'data', 'valor', 'tipo', 'observacoes'];
       const movimentacoesHeaders = ['ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'segmento', 'observacao'];
 
       // Converter dados para CSV
@@ -787,8 +961,9 @@ export const useFerramentas = (): UseFerramentasReturn => {
       });
 
       const processedMovimentacoes = movimentacoes.map((mov: any) => {
-        const { createdAt, updatedAt, ...movWithoutDates } = mov;
+        const { createdAt, updatedAt, ticker, ...movWithoutDates } = mov;
         return {
+          ativo: ticker, // Mapear 'ticker' de volta para 'ativo' no CSV
           ...movWithoutDates,
           data: formatDateToDDMMAAAA(mov.data)
         };
@@ -823,7 +998,7 @@ export const useFerramentas = (): UseFerramentasReturn => {
   const generateCSVTemplates = useCallback((): { ativos: string; proventos: string; movimentacoes: string } => {
     // Headers para cada tipo de arquivo CSV (sem ID, createdAt e updatedAt)
     const ativosHeaders = ['ticker', 'nome', 'tipo', 'preco', 'quantidade', 'valorTotal', 'segmento', 'administrador', 'status', 'site', 'observacoes'];
-    const proventosHeaders = ['ativoTicker', 'ativoNome', 'data', 'valor', 'tipo', 'observacoes'];
+    const proventosHeaders = ['ativoTicker', 'data', 'valor', 'tipo', 'observacoes'];
     const movimentacoesHeaders = ['ativo', 'data', 'tipo', 'operacao', 'quantidade', 'valorUnitario', 'segmento', 'observacao'];
 
     // Dados de exemplo para templates (sem ID e com datas no formato DD/MM/AAAA)
@@ -843,7 +1018,6 @@ export const useFerramentas = (): UseFerramentasReturn => {
 
     const exemploProventos = [{
       ativoTicker: 'PETR4',
-      ativoNome: 'Petrobras PN',
       data: '15/06/2024',
       valor: 150.50,
       tipo: 'dividendo',
@@ -987,20 +1161,61 @@ export const useFerramentas = (): UseFerramentasReturn => {
 
       // Importar movimentações (mantendo lógica básica por enquanto)
       if (csvData.movimentacoes) {
-        const movimentacoesArray = csvToArray(csvData.movimentacoes);
-        if (movimentacoesArray.length > 0) {
-          const processedMovimentacoes = movimentacoesArray.map((mov: any, index: number) => ({
+        console.log('🔍 Validando dados de movimentações...');
+        console.log(`📊 Tamanho do conteúdo de movimentações: ${csvData.movimentacoes.length} caracteres`);
+        
+        const validation = validateMovimentacoesCSV(csvData.movimentacoes);
+        
+        console.log(`✅ Validação de movimentações concluída: ${validation.isValid}`);
+        console.log(`❌ Erros encontrados: ${validation.errors.length}`);
+        console.log(`⚠️ Avisos encontrados: ${validation.warnings.length}`);
+        console.log(`📋 Registros processados: ${validation.processedData.length}`);
+        
+        if (validation.errors.length > 0) {
+          console.log('❌ Detalhes dos erros de validação:', validation.errors);
+          console.log('❌ Erros de validação de Movimentações - Mostrando Dialog...');
+          
+          // Converter erros para o formato do dialog
+          const dialogErrors: ValidationError[] = validation.errors.map(err => ({
+            type: err.type,
+            line: err.line,
+            field: err.field,
+            value: err.value,
+            expected: err.expected,
+            message: err.message
+          }));
+          
+          // Mostrar dialog com erros
+          setValidationErrors(dialogErrors);
+          setShowValidationDialog(true);
+          
+          console.log('❌ Dialog de erro configurado para exibição');
+          return false;
+        }
+
+        if (validation.warnings.length > 0) {
+          const warningMessages = validation.warnings.map(warn => `Linha ${warn.line}: ${warn.message}`).join('\n');
+          console.log('⚠️ Avisos de validação de Movimentações:', warningMessages);
+        }
+
+        if (validation.processedData.length > 0) {
+          console.log('💾 Preparando dados de movimentações para salvamento...');
+          const processedMovimentacoes = validation.processedData.map((mov: any, index: number) => ({
             ...mov,
             id: Date.now() + index, // Gerar novo ID baseado no timestamp
-            quantidade: parseFloat(mov.quantidade) || 0,
-            valorUnitario: parseFloat(mov.valorUnitario) || 0,
             data: parseDDMMAAAAToISO(mov.data) || mov.data,
             createdAt: importDate, // Data de importação
             updatedAt: '' // Deixar vazio conforme solicitado
           }));
+          
+          console.log('🔧 Exemplo da primeira movimentação processada:', JSON.stringify(processedMovimentacoes[0], null, 2));
+          console.log('💾 Salvando movimentações no AsyncStorage...');
+          
           await AsyncStorage.setItem('carteira-investimentos-movimentacoes', JSON.stringify(processedMovimentacoes));
           console.log(`✅ ${processedMovimentacoes.length} movimentações importadas com sucesso`);
           importSuccess = true;
+        } else {
+          console.log('⚠️ Nenhuma movimentação válida foi processada para importação');
         }
       }
 

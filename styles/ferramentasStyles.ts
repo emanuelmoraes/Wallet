@@ -258,7 +258,7 @@ export const styles = StyleSheet.create({
 
   cardGap: {
     marginHorizontal: 20,
-    marginVertical: 10,
+    marginVertical: 20,
   },
 
   // Modal de seleção de diretório
@@ -344,5 +344,44 @@ export const styles = StyleSheet.create({
     paddingTop: 16,
     borderTopWidth: 1,
     borderTopColor: '#E2E8F0',
+  },
+
+  // Estilos para Dialogs Customizadas (4 dialogs individuais)
+  customDialog: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    maxWidth: 500,
+    marginHorizontal: 20,
+  },
+
+  dialogTitle: {
+    fontSize: 20,
+    fontWeight: '700',
+    color: '#1E293B',
+    textAlign: 'center',
+    marginTop: 8,
+  },
+
+  dialogText: {
+    fontSize: 15,
+    color: '#334155',
+    lineHeight: 24,
+    textAlign: 'left',
+  },
+
+  dialogTextBold: {
+    fontWeight: '700',
+    color: '#1E293B',
+  },
+
+  dialogWarningText: {
+    color: '#7C2D12',
+  },
+
+  dialogActions: {
+    paddingHorizontal: 16,
+    paddingBottom: 16,
+    paddingTop: 8,
+    gap: 8,
   },
 });

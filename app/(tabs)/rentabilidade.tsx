@@ -7,16 +7,16 @@ import React, { useEffect, useState } from 'react';
 import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
-  ActivityIndicator,
-  Button,
-  Icon,
-  IconButton,
-  Modal,
-  Portal,
-  Searchbar,
-  Text,
-  TextInput,
-  useTheme
+    ActivityIndicator,
+    Button,
+    Icon,
+    IconButton,
+    Modal,
+    Portal,
+    Searchbar,
+    Text,
+    TextInput,
+    useTheme
 } from 'react-native-paper';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
@@ -38,7 +38,7 @@ export default function RentabilidadeScreen() {
   const [filteredData, setFilteredData] = useState<RentabilidadeData[]>([]);
   
   const [formData, setFormData] = useState<Partial<PrecoAtualInput>>({
-    ativo: '',
+    ticker: '',
     precoAtual: undefined,
   });
 
@@ -67,13 +67,13 @@ export default function RentabilidadeScreen() {
       const data = rentabilidadeData.find(item => item.ativo === ativo);
       setEditingAtivo(ativo);
       setFormData({
-        ativo: ativo,
+        ticker: ativo,
         precoAtual: data?.precoAtual || 0,
       });
     } else {
       setEditingAtivo(null);
       setFormData({
-        ativo: '',
+        ticker: '',
         precoAtual: undefined,
       });
     }
@@ -84,18 +84,18 @@ export default function RentabilidadeScreen() {
     setModalVisible(false);
     setEditingAtivo(null);
     setFormData({
-      ativo: '',
+      ticker: '',
       precoAtual: undefined,
     });
   };
 
   const handleSavePreco = async () => {
-    if (!formData.ativo || !formData.precoAtual) {
+    if (!formData.ticker || !formData.precoAtual) {
       return;
     }
 
     const success = await updatePrecoAtual({
-      ativo: formData.ativo,
+      ticker: formData.ticker,
       precoAtual: formData.precoAtual,
     });
 
@@ -342,7 +342,7 @@ export default function RentabilidadeScreen() {
             <View style={{ marginBottom: 16 }}>
               <TextInput
                 label="Ativo"
-                value={formData.ativo || ''}
+                value={formData.ticker || ''}
                 disabled={true}
                 style={sharedStyles.input}
                 mode="outlined"
