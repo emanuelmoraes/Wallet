@@ -5,7 +5,7 @@ import { sharedStyles } from '@/styles/sharedStyles';
 import { Ativo, CreateAtivoInput } from '@/types/ativo';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
   ActivityIndicator,
@@ -26,7 +26,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function AtivosScreen() {
   const theme = useTheme();
-  
+
   const {
     ativos,
     loading,
@@ -46,7 +46,7 @@ export default function AtivosScreen() {
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredAtivos, setFilteredAtivos] = useState<Ativo[]>([]);
   const [filterType, setFilterType] = useState('todos');
-  
+
   const [formData, setFormData] = useState<Partial<CreateAtivoInput>>({
     nome: '',
     ticker: '',
@@ -80,7 +80,7 @@ export default function AtivosScreen() {
     // Search filter
     if (searchQuery.trim()) {
       const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(ativo => 
+      filtered = filtered.filter(ativo =>
         ativo.nome.toLowerCase().includes(query) ||
         ativo.ticker.toLowerCase().includes(query) ||
         ativo.segmento?.toLowerCase().includes(query)
@@ -93,10 +93,10 @@ export default function AtivosScreen() {
   // Calculate ativos statistics
   const calculateAtivosStats = () => {
     const totalAtivos = ativos.length;
-    const totalInvestido = ativos.reduce((total, ativo) => 
+    const totalInvestido = ativos.reduce((total, ativo) =>
       total + (ativo.preco * ativo.quantidade), 0);
     const ativosAtivos = ativos.filter(ativo => ativo.status === 'ativo').length;
-    
+
     return { totalAtivos, totalInvestido, ativosAtivos };
   };
 
@@ -229,111 +229,105 @@ export default function AtivosScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={sharedStyles.container}>
-        {/* Modern Header */}
-        <LinearGradient
-          colors={[primaryGreen, secondaryGreen]}
-          style={sharedStyles.modernHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Text style={[sharedStyles.headerTitle, { color: '#FFFFFF' }]}>
-            Meus Ativos
-          </Text>
-          <Text style={[sharedStyles.headerSubtitle, { color: '#FFFFFF90' }]}>
-            Gerencie seus investimentos
-          </Text>
-        </LinearGradient>
-
-        {/* Quick Stats Cards */}
-        <View style={sharedStyles.quickStatsContainer}>
-          <View style={sharedStyles.quickStatsRow}>
-            <View style={sharedStyles.quickStatCard}>
-              <Avatar.Icon 
-                size={40} 
-                icon="wallet" 
-                style={{ backgroundColor: primaryGreen + '15' }}
-                color={primaryGreen}
-              />
-              <Text style={[sharedStyles.quickStatValue, { color: primaryGreen }]}>
-                {totalAtivos}
-              </Text>
-              <Text style={[sharedStyles.quickStatLabel, { color: '#64748B' }]}>
-                Total
-              </Text>
-            </View>
-
-            <View style={sharedStyles.quickStatCard}>
-              <Avatar.Icon 
-                size={40} 
-                icon="check-circle" 
-                style={{ backgroundColor: '#4CAF50' + '15' }}
-                color={'#4CAF50'}
-              />
-              <Text style={[sharedStyles.quickStatValue, { color: '#4CAF50' }]}>
-                {ativosAtivos}
-              </Text>
-              <Text style={[sharedStyles.quickStatLabel, { color: '#64748B' }]}>
-                Ativos
-              </Text>
-            </View>
-
-            <View style={sharedStyles.quickStatCard}>
-              <Avatar.Icon 
-                size={40} 
-                icon="trending-up" 
-                style={{ backgroundColor: '#FFB946' + '15' }}
-                color={'#FFB946'}
-              />
-              <Text style={[sharedStyles.quickStatValue, { color: '#FFB946' }]}>
-                {formatCurrency(totalInvestido)}
-              </Text>
-              <Text style={[sharedStyles.quickStatLabel, { color: '#64748B' }]}>
-                Investido
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Search and Filter */}
-        <View style={sharedStyles.searchContainer}>
-          <View style={styles.searchWrapper}>
-            <Searchbar
-              placeholder="Buscar por nome, ticker ou setor..."
-              onChangeText={setSearchQuery}
-              value={searchQuery}
-              style={[sharedStyles.modernSearchbar, { flex: 1 }]}
-              inputStyle={{ color: '#1E293B' }}
-              iconColor={'#64748B'}
-              placeholderTextColor={'#64748B'}
-            />
-            <IconButton
-              icon="filter-variant"
-              mode="contained-tonal"
-              size={24}
-              onPress={() => setFilterModalVisible(true)}
-              iconColor={primaryGreen}
-              containerColor={primaryGreen + '15'}
-              style={styles.filterIconButton}
-            />
-          </View>
-        </View>
-
-        <ScrollView 
+        <ScrollView
           style={sharedStyles.scrollView}
           contentContainerStyle={sharedStyles.scrollContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={loading}
-              onRefresh={refreshData}
-            />
-          }
-        >
+          showsVerticalScrollIndicator={false}>
+          {/* Modern Header */}
+          <LinearGradient
+            colors={[primaryGreen, secondaryGreen]}
+            style={sharedStyles.modernHeader}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={[sharedStyles.headerTitle, { color: '#FFFFFF' }]}>
+              Meus Ativos
+            </Text>
+            <Text style={sharedStyles.headerSubtitle}>
+              Gerencie seus investimentos
+            </Text>
+          </LinearGradient>
+
+          {/* Quick Stats Cards */}
+          <View style={sharedStyles.quickStatsContainer}>
+            <View style={sharedStyles.quickStatsRow}>
+              <View style={sharedStyles.quickStatCard}>
+                <Avatar.Icon
+                  size={40}
+                  icon="wallet"
+                  style={{ backgroundColor: primaryGreen + '15' }}
+                  color={primaryGreen}
+                />
+                <Text style={[sharedStyles.quickStatValue, { color: primaryGreen }]}>
+                  {totalAtivos}
+                </Text>
+                <Text style={[sharedStyles.quickStatLabel, { color: '#64748B' }]}>
+                  Total
+                </Text>
+              </View>
+
+              <View style={sharedStyles.quickStatCard}>
+                <Avatar.Icon
+                  size={40}
+                  icon="check-circle"
+                  style={{ backgroundColor: '#4CAF50' + '15' }}
+                  color={'#4CAF50'}
+                />
+                <Text style={[sharedStyles.quickStatValue, { color: '#4CAF50' }]}>
+                  {ativosAtivos}
+                </Text>
+                <Text style={[sharedStyles.quickStatLabel, { color: '#64748B' }]}>
+                  Ativos
+                </Text>
+              </View>
+
+              <View style={sharedStyles.quickStatCard}>
+                <Avatar.Icon
+                  size={40}
+                  icon="trending-up"
+                  style={{ backgroundColor: '#FFB946' + '15' }}
+                  color={'#FFB946'}
+                />
+                <Text style={[sharedStyles.quickStatValue, { color: '#FFB946' }]}>
+                  {formatCurrency(totalInvestido)}
+                </Text>
+                <Text style={[sharedStyles.quickStatLabel, { color: '#64748B' }]}>
+                  Investido
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Search and Filter */}
+          <View style={sharedStyles.searchContainer}>
+            <View style={styles.searchWrapper}>
+              <Searchbar
+                placeholder="Buscar por nome, ticker ou setor..."
+                onChangeText={setSearchQuery}
+                value={searchQuery}
+                style={[sharedStyles.modernSearchbar, { flex: 1 }]}
+                inputStyle={{ color: '#1E293B' }}
+                iconColor={'#64748B'}
+                placeholderTextColor={'#64748B'}
+              />
+              <IconButton
+                icon="filter-variant"
+                mode="contained-tonal"
+                size={24}
+                onPress={() => setFilterModalVisible(true)}
+                iconColor={primaryGreen}
+                containerColor={primaryGreen + '15'}
+                style={styles.filterIconButton}
+              />
+            </View>
+          </View>
+
           {filteredAtivos.map((ativo) => (
             <View key={ativo.id} style={sharedStyles.modernCard}>
               <View style={sharedStyles.cardHeader}>
                 <View style={[sharedStyles.cardIcon, { backgroundColor: getTipoColor(ativo.tipo) + '15' }]}>
-                  <Avatar.Icon 
-                    size={32} 
+                  <Avatar.Icon
+                    size={32}
                     icon={getTipoIcon(ativo.tipo)}
                     style={{ backgroundColor: 'transparent' }}
                     color={getTipoColor(ativo.tipo)}
@@ -379,7 +373,7 @@ export default function AtivosScreen() {
                     {ativo.quantidade.toLocaleString('pt-BR')}
                   </Text>
                 </View>
-                
+
                 <View style={sharedStyles.valueContainer}>
                   <Text style={[sharedStyles.valueLabel, { color: '#64748B' }]}>
                     Preço Médio
@@ -425,9 +419,9 @@ export default function AtivosScreen() {
 
           {filteredAtivos.length === 0 && (
             <View style={sharedStyles.emptyState}>
-              <Avatar.Icon 
-                size={48} 
-                icon="briefcase-outline" 
+              <Avatar.Icon
+                size={48}
+                icon="briefcase-outline"
                 style={{ backgroundColor: 'transparent' }}
                 color={'#64748B'}
               />
@@ -435,8 +429,8 @@ export default function AtivosScreen() {
                 {searchQuery ? 'Nenhum ativo encontrado' : 'Nenhum ativo cadastrado'}
               </Text>
               <Text style={[sharedStyles.emptySubtitle, { color: '#64748B', textAlign: 'center', marginTop: 8 }]}>
-                {searchQuery 
-                  ? 'Tente buscar por outro termo' 
+                {searchQuery
+                  ? 'Tente buscar por outro termo'
                   : 'Comece adicionando seus primeiros investimentos'
                 }
               </Text>
@@ -594,7 +588,7 @@ export default function AtivosScreen() {
               <Text style={[styles.modalTitle, { color: '#1E293B' }]}>
                 Filtrar por Tipo
               </Text>
-              
+
               <Text style={[styles.filterModalSubtitle, { color: '#64748B' }]}>
                 Selecione um tipo de ativo para filtrar
               </Text>

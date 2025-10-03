@@ -5,7 +5,7 @@ import { sharedStyles } from '@/styles/sharedStyles';
 import { CreateMovimentacaoInput, Movimentacao, SegmentoMovimentacao, TipoOperacao } from '@/types/movimentacao';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
   ActivityIndicator,
@@ -28,7 +28,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function MovimentacoesScreen() {
   const theme = useTheme();
-  
+
   const getTodayDateString = () => {
     const today = new Date();
     const year = today.getFullYear();
@@ -36,7 +36,7 @@ export default function MovimentacoesScreen() {
     const day = String(today.getDate()).padStart(2, '0');
     return `${year}-${month}-${day}`;
   };
-  
+
   const {
     movimentacoes,
     stats,
@@ -118,7 +118,7 @@ export default function MovimentacoesScreen() {
     const totalCompra = movimentacoes
       .filter(mov => mov.operacao === 'compra' || mov.operacao === 'subscricao')
       .reduce((total, mov) => total + (mov.quantidade * mov.valorUnitario), 0);
-    
+
     const totalVenda = movimentacoes
       .filter(mov => mov.operacao === 'venda')
       .reduce((total, mov) => total + (mov.quantidade * mov.valorUnitario), 0);
@@ -338,89 +338,85 @@ export default function MovimentacoesScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={sharedStyles.container}>
-        {/* Modern Header */}
-        <LinearGradient
-          colors={[primaryGreen, secondaryGreen]}
-          style={sharedStyles.modernHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Text style={[sharedStyles.headerTitle, { color: '#FFFFFF' }]}>
-            Movimentações
-          </Text>
-          <Text style={[sharedStyles.headerSubtitle, { color: '#FFFFFF90' }]}>
-            Controle suas operações de compra e venda
-          </Text>
-        </LinearGradient>
-
-        {/* Quick Stats Cards */}
-        <View style={styles.quickStatsContainer}>
-          <View style={styles.quickStatsRow}>
-            <View style={styles.quickStatCard}>
-              <Avatar.Icon 
-                size={40} 
-                icon="arrow-down" 
-                style={{ backgroundColor: '#FF5A5A' + '15' }}
-                color={'#FF5A5A'}
-              />
-              <Text style={[styles.quickStatValue, { color: '#FF5A5A' }]}>
-                {formatCurrency(totalCompra)}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
-                Total Compra
-              </Text>
-            </View>
-
-            <View style={styles.quickStatCard}>
-              <Avatar.Icon 
-                size={40} 
-                icon="arrow-up" 
-                style={{ backgroundColor: '#4CAF50' + '15' }}
-                color={'#4CAF50'}
-              />
-              <Text style={[styles.quickStatValue, { color: '#4CAF50' }]}>
-                {formatCurrency(totalVenda)}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
-                Total Venda
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Search and Filters */}
-        <View style={sharedStyles.searchContainer}>
-          <View style={styles.searchWrapper}>
-            <Searchbar
-              placeholder="Buscar por ativo, segmento ou operação..."
-              onChangeText={setSearchQuery}
-              value={searchQuery}
-              style={[sharedStyles.modernSearchbar, { flex: 1 }]}
-              inputStyle={{ color: '#1E293B' }}
-              iconColor={'#64748B'}
-              placeholderTextColor={'#64748B'}
-            />
-            <IconButton
-              icon="filter-variant"
-              mode="contained-tonal"
-              size={24}
-              onPress={() => setFilterModalVisible(true)}
-              iconColor={primaryGreen}
-              containerColor={primaryGreen + '15'}
-              style={styles.filterIconButton}
-            />
-          </View>
-        </View>
-
         <ScrollView
           style={styles.scrollView}
-          refreshControl={
-            <RefreshControl
-              refreshing={loading}
-              onRefresh={refreshData}
-            />
-          }
+          contentContainerStyle={sharedStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
+          {/* Modern Header */}
+          <LinearGradient
+            colors={[primaryGreen, secondaryGreen]}
+            style={sharedStyles.modernHeader}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={[sharedStyles.headerTitle, { color: '#FFFFFF' }]}>
+              Movimentações
+            </Text>
+            <Text style={[sharedStyles.headerSubtitle, { color: '#FFFFFF90' }]}>
+              Controle suas operações de compra e venda
+            </Text>
+          </LinearGradient>
+
+          {/* Quick Stats Cards */}
+          <View style={styles.quickStatsContainer}>
+            <View style={styles.quickStatsRow}>
+              <View style={styles.quickStatCard}>
+                <Avatar.Icon
+                  size={40}
+                  icon="arrow-down"
+                  style={{ backgroundColor: '#FF5A5A' + '15' }}
+                  color={'#FF5A5A'}
+                />
+                <Text style={[styles.quickStatValue, { color: '#FF5A5A' }]}>
+                  {formatCurrency(totalCompra)}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
+                  Total Compra
+                </Text>
+              </View>
+
+              <View style={styles.quickStatCard}>
+                <Avatar.Icon
+                  size={40}
+                  icon="arrow-up"
+                  style={{ backgroundColor: '#4CAF50' + '15' }}
+                  color={'#4CAF50'}
+                />
+                <Text style={[styles.quickStatValue, { color: '#4CAF50' }]}>
+                  {formatCurrency(totalVenda)}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
+                  Total Venda
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Search and Filters */}
+          <View style={sharedStyles.searchContainer}>
+            <View style={styles.searchWrapper}>
+              <Searchbar
+                placeholder="Buscar por ativo, segmento ou operação..."
+                onChangeText={setSearchQuery}
+                value={searchQuery}
+                style={[sharedStyles.modernSearchbar, { flex: 1 }]}
+                inputStyle={{ color: '#1E293B' }}
+                iconColor={'#64748B'}
+                placeholderTextColor={'#64748B'}
+              />
+              <IconButton
+                icon="filter-variant"
+                mode="contained-tonal"
+                size={24}
+                onPress={() => setFilterModalVisible(true)}
+                iconColor={primaryGreen}
+                containerColor={primaryGreen + '15'}
+                style={styles.filterIconButton}
+              />
+            </View>
+          </View>
+
           {filteredMovimentacoes.map((movimentacao) => (
             <View key={movimentacao.id} style={sharedStyles.modernCard}>
               <View style={sharedStyles.cardHeader}>
@@ -491,7 +487,7 @@ export default function MovimentacoesScreen() {
 
                 <View style={styles.totalRow}>
                   <Text variant="bodySmall" style={sharedStyles.valueLabel}>Valor Total</Text>
-                  <Text variant="titleMedium" style={[sharedStyles.valueAmount, { 
+                  <Text variant="titleMedium" style={[sharedStyles.valueAmount, {
                     color: getOperacaoColor(movimentacao.operacao),
                     fontWeight: 'bold'
                   }]}>
@@ -684,7 +680,7 @@ export default function MovimentacoesScreen() {
               <Text style={[styles.modalTitle, { color: '#1E293B' }]}>
                 Filtrar Movimentações
               </Text>
-              
+
               <Text style={[styles.filterModalSubtitle, { color: '#64748B' }]}>
                 Selecione o tipo de operação e período
               </Text>

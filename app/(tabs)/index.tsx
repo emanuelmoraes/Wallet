@@ -22,7 +22,7 @@ export default function PortfolioScreen() {
   const theme = useTheme();
   const colorScheme = useColorScheme();
   const colors = Colors[colorScheme ?? 'light'];
-  
+
   const {
     ativos,
     portfolioStats,
@@ -34,13 +34,13 @@ export default function PortfolioScreen() {
   } = useAtivos();
 
   const isPositive = (value: number) => value >= 0;
-  
+
   const formatCurrency = (value: number) => {
-    return value.toLocaleString('pt-BR', { 
-      style: 'currency', 
+    return value.toLocaleString('pt-BR', {
+      style: 'currency',
       currency: 'BRL',
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2 
+      maximumFractionDigits: 2
     });
   };
 
@@ -86,90 +86,90 @@ export default function PortfolioScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={[sharedStyles.container, { backgroundColor: colors.background }]}>
-        {/* Modern Header with Balance */}
-        <LinearGradient
-          colors={[colors.gradientStart, colors.gradientEnd]}
-          style={styles.gradientHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <View style={styles.headerContent}>
-            <Text style={styles.welcomeText}>Bem-vindo ao seu</Text>
-            <Text style={styles.portfolioTitle}>Portfolio</Text>
-            <View style={styles.balanceContainer}>
-              <Text style={styles.balanceLabel}>Valor Total</Text>
-              <Text style={styles.balanceValue}>
-                {portfolioStats ? formatCurrency(portfolioStats.valorTotal) : 'R$ 0,00'}
-              </Text>
-              {portfolioStats && (
-                <View style={styles.returnContainer}>
-                  <Text style={[
-                    styles.returnText,
-                    { color: isPositive(portfolioStats.rendimentoTotal) ? '#FFFFFF' : '#FFE5E5' }
-                  ]}>
-                    {formatPercentage(portfolioStats.rendimentoPercentual)}
-                  </Text>
-                  <Text style={styles.returnValue}>
-                    {formatCurrency(portfolioStats.rendimentoTotal)}
-                  </Text>
-                </View>
-              )}
-            </View>
-          </View>
-        </LinearGradient>
-
-        {/* Quick Stats Cards */}
-        <View style={styles.quickStatsContainer}>
-          <View style={styles.quickStatsRow}>
-            <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
-              <Avatar.Icon 
-                size={40} 
-                icon="chart-line" 
-                style={{ backgroundColor: colors.primary + '15' }}
-                color={colors.primary}
-              />
-              <Text style={[styles.quickStatValue, { color: colors.primary }]}>
-                {portfolioStats ? portfolioStats.valorTotal.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '0'}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>Investido</Text>
-            </View>
-            
-            <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
-              <Avatar.Icon 
-                size={40} 
-                icon="trending-up" 
-                style={{ backgroundColor: colors.success + '15' }}
-                color={colors.success}
-              />
-              <Text style={[styles.quickStatValue, { color: colors.success }]}>
-                {portfolioStats ? portfolioStats.rendimentoTotal.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '0'}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>Retorno</Text>
-            </View>
-            
-            <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
-              <Avatar.Icon 
-                size={40} 
-                icon="briefcase" 
-                style={{ backgroundColor: colors.warning + '15' }}
-                color={colors.warning}
-              />
-              <Text style={[styles.quickStatValue, { color: colors.warning }]}>
-                {ativos.length}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>Ativos</Text>
-            </View>
-          </View>
-        </View>
-
         <ScrollView style={sharedStyles.scrollView} showsVerticalScrollIndicator={false}>
+          {/* Modern Header with Balance */}
+          <LinearGradient
+            colors={[colors.gradientStart, colors.gradientEnd]}
+            style={styles.gradientHeader}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <View style={styles.headerContent}>
+              <Text style={styles.welcomeText}>Bem-vindo ao seu</Text>
+              <Text style={styles.portfolioTitle}>Portfolio</Text>
+              <View style={styles.balanceContainer}>
+                <Text style={styles.balanceLabel}>Valor Total</Text>
+                <Text style={styles.balanceValue}>
+                  {portfolioStats ? formatCurrency(portfolioStats.valorTotal) : 'R$ 0,00'}
+                </Text>
+                {portfolioStats && (
+                  <View style={styles.returnContainer}>
+                    <Text style={[
+                      styles.returnText,
+                      { color: isPositive(portfolioStats.rendimentoTotal) ? '#FFFFFF' : '#FFE5E5' }
+                    ]}>
+                      {formatPercentage(portfolioStats.rendimentoPercentual)}
+                    </Text>
+                    <Text style={styles.returnValue}>
+                      {formatCurrency(portfolioStats.rendimentoTotal)}
+                    </Text>
+                  </View>
+                )}
+              </View>
+            </View>
+          </LinearGradient>
+
+          {/* Quick Stats Cards */}
+          <View style={styles.quickStatsContainer}>
+            <View style={styles.quickStatsRow}>
+              <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
+                <Avatar.Icon
+                  size={40}
+                  icon="chart-line"
+                  style={{ backgroundColor: colors.primary + '15' }}
+                  color={colors.primary}
+                />
+                <Text style={[styles.quickStatValue, { color: colors.primary }]}>
+                  {portfolioStats ? portfolioStats.valorTotal.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '0'}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>Investido</Text>
+              </View>
+
+              <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
+                <Avatar.Icon
+                  size={40}
+                  icon="trending-up"
+                  style={{ backgroundColor: colors.success + '15' }}
+                  color={colors.success}
+                />
+                <Text style={[styles.quickStatValue, { color: colors.success }]}>
+                  {portfolioStats ? portfolioStats.rendimentoTotal.toLocaleString('pt-BR', { maximumFractionDigits: 0 }) : '0'}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>Retorno</Text>
+              </View>
+
+              <View style={[styles.quickStatCard, { backgroundColor: colors.surface }]}>
+                <Avatar.Icon
+                  size={40}
+                  icon="briefcase"
+                  style={{ backgroundColor: colors.warning + '15' }}
+                  color={colors.warning}
+                />
+                <Text style={[styles.quickStatValue, { color: colors.warning }]}>
+                  {ativos.length}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: colors.textSecondary }]}>Ativos</Text>
+              </View>
+            </View>
+          </View>
+
           {/* Portfolio Summary Card */}
           <View style={[sharedStyles.modernCard, { backgroundColor: colors.surface }]}>
             <View style={sharedStyles.cardHeader}>
               <View style={[sharedStyles.cardIcon, { backgroundColor: colors.primaryContainer }]}>
-                <Avatar.Icon 
-                  size={32} 
-                  icon="wallet" 
+                <Avatar.Icon
+                  size={32}
+                  icon="wallet"
                   style={{ backgroundColor: 'transparent' }}
                   color={colors.primary}
                 />
@@ -193,10 +193,10 @@ export default function PortfolioScreen() {
                 </Text>
                 <Text style={[
                   styles.metricValue,
-                  { 
-                    color: portfolioStats && isPositive(portfolioStats.rendimentoTotal) 
-                      ? colors.success 
-                      : colors.error 
+                  {
+                    color: portfolioStats && isPositive(portfolioStats.rendimentoTotal)
+                      ? colors.success
+                      : colors.error
                   }
                 ]}>
                   {portfolioStats ? formatCurrency(portfolioStats.rendimentoTotal) : 'R$ 0,00'}
@@ -209,10 +209,10 @@ export default function PortfolioScreen() {
                 </Text>
                 <Text style={[
                   styles.metricValue,
-                  { 
-                    color: portfolioStats && isPositive(portfolioStats.rendimentoPercentual) 
-                      ? colors.success 
-                      : colors.error 
+                  {
+                    color: portfolioStats && isPositive(portfolioStats.rendimentoPercentual)
+                      ? colors.success
+                      : colors.error
                   }
                 ]}>
                   {portfolioStats ? formatPercentage(portfolioStats.rendimentoPercentual) : '0%'}
@@ -226,9 +226,9 @@ export default function PortfolioScreen() {
             <View style={[sharedStyles.modernCard, { backgroundColor: colors.surface }]}>
               <View style={sharedStyles.cardHeader}>
                 <View style={[sharedStyles.cardIcon, { backgroundColor: colors.secondaryContainer }]}>
-                  <Avatar.Icon 
-                    size={32} 
-                    icon="chart-donut" 
+                  <Avatar.Icon
+                    size={32}
+                    icon="chart-donut"
                     style={{ backgroundColor: 'transparent' }}
                     color={colors.secondary}
                   />
@@ -248,9 +248,9 @@ export default function PortfolioScreen() {
               {distribuicaoTipos.map((item, index) => (
                 <View key={index} style={styles.distributionItem}>
                   <View style={styles.distributionHeader}>
-                    <Avatar.Icon 
-                      size={32} 
-                      icon={getTipoIcon(item.tipo)} 
+                    <Avatar.Icon
+                      size={32}
+                      icon={getTipoIcon(item.tipo)}
                       style={{ backgroundColor: getTipoColor(item.tipo) + '15' }}
                       color={getTipoColor(item.tipo)}
                     />
@@ -263,8 +263,8 @@ export default function PortfolioScreen() {
                       </Text>
                     </View>
                   </View>
-                  <ProgressBar 
-                    progress={item.percentual / 100} 
+                  <ProgressBar
+                    progress={item.percentual / 100}
                     color={getTipoColor(item.tipo)}
                     style={styles.progressBar}
                   />
@@ -281,9 +281,9 @@ export default function PortfolioScreen() {
             <View style={[sharedStyles.modernCard, { backgroundColor: colors.surface }]}>
               <View style={sharedStyles.cardHeader}>
                 <View style={[sharedStyles.cardIcon, { backgroundColor: colors.warning + '15' }]}>
-                  <Avatar.Icon 
-                    size={32} 
-                    icon="star" 
+                  <Avatar.Icon
+                    size={32}
+                    icon="star"
                     style={{ backgroundColor: 'transparent' }}
                     color={colors.warning}
                   />
@@ -322,10 +322,10 @@ export default function PortfolioScreen() {
                       </Text>
                       <Text style={[
                         styles.assetReturn,
-                        { 
-                          color: isPositive(ativo.valorTotal - (ativo.preco * ativo.quantidade)) 
-                            ? colors.success 
-                            : colors.error 
+                        {
+                          color: isPositive(ativo.valorTotal - (ativo.preco * ativo.quantidade))
+                            ? colors.success
+                            : colors.error
                         }
                       ]}>
                         {formatPercentage(((ativo.valorTotal - (ativo.preco * ativo.quantidade)) / (ativo.preco * ativo.quantidade)) * 100)}
@@ -342,8 +342,8 @@ export default function PortfolioScreen() {
 
           {/* Refresh Button */}
           <View style={styles.actionsContainer}>
-            <Button 
-              mode="contained" 
+            <Button
+              mode="contained"
               onPress={refreshData}
               style={[styles.refreshButton, { backgroundColor: colors.primary }]}
               contentStyle={styles.buttonContent}

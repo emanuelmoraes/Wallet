@@ -51,7 +51,7 @@ export default function FerramentasScreen() {
   const [exportTemplatesDialogVisible, setExportTemplatesDialogVisible] = useState(false);
   const [importDataDialogVisible, setImportDataDialogVisible] = useState(false);
   const [clearDataDialogVisible, setClearDataDialogVisible] = useState(false);
-  
+
   // Estado para dialog de resultado (sucesso/erro)
   const [resultDialogVisible, setResultDialogVisible] = useState(false);
   const [resultDialogData, setResultDialogData] = useState<{
@@ -59,7 +59,7 @@ export default function FerramentasScreen() {
     title: string;
     message: string;
   } | null>(null);
-  
+
   // Estados para modals
   const [tipoModalVisible, setTipoModalVisible] = useState(false);
   const [editingTipo, setEditingTipo] = useState<TipoAtivo | null>(null);
@@ -101,7 +101,7 @@ export default function FerramentasScreen() {
     }
 
     let success = false;
-    
+
     if (editingTipo) {
       success = await updateTipoAtivo(editingTipo.id, tipoForm.nome, tipoForm.icon);
     } else {
@@ -131,7 +131,7 @@ export default function FerramentasScreen() {
   const handleClearData = async () => {
     setClearDataDialogVisible(false);
     const success = await clearAllData();
-    
+
     if (success) {
       showResultDialog(
         'success',
@@ -150,7 +150,7 @@ export default function FerramentasScreen() {
   const handleImportData = async () => {
     setImportDataDialogVisible(false);
     const success = await selectAndImportCSVFiles();
-    
+
     if (success) {
       showResultDialog(
         'success',
@@ -181,7 +181,7 @@ export default function FerramentasScreen() {
   const exportTemplatesWithDirectory = async () => {
     try {
       const templates = generateCSVTemplates();
-      
+
       const filesCreated = [
         { name: `ativos_template.csv`, content: templates.ativos },
         { name: `proventos_template.csv`, content: templates.proventos },
@@ -189,7 +189,7 @@ export default function FerramentasScreen() {
       ];
 
       console.log('=== TEMPLATES PREPARADOS ===');
-      
+
       if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         filesCreated.forEach(file => {
           const blob = new Blob([file.content], { type: 'text/csv;charset=utf-8;' });
@@ -204,7 +204,7 @@ export default function FerramentasScreen() {
           URL.revokeObjectURL(url);
           console.log(`📄 Arquivo baixado: ${file.name}`);
         });
-        
+
         Alert.alert(
           'Templates Baixados!',
           `✅ Templates foram baixados com sucesso!\n\n📄 Arquivos:\n${filesCreated.map(f => `• ${f.name}`).join('\n')}\n\n💾 Os arquivos foram baixados!\n\n💡 Use como referência para importar dados.`,
@@ -215,7 +215,7 @@ export default function FerramentasScreen() {
           console.log(`\n📄 Arquivo: ${file.name}`);
           console.log(file.content);
         });
-        
+
         Alert.alert(
           'Templates Preparados!',
           `📄 Templates foram preparados!\n\n📱 Verifique o console para o conteúdo dos templates.\n\n💡 Copie o conteúdo para criar os arquivos CSV.`,
@@ -235,7 +235,7 @@ export default function FerramentasScreen() {
       if (!csvData) return;
 
       const { ativos, proventos, movimentacoes, stats } = csvData;
-      
+
       const filesCreated = [
         { name: `ativos.csv`, content: ativos },
         { name: `proventos.csv`, content: proventos },
@@ -243,7 +243,7 @@ export default function FerramentasScreen() {
       ];
 
       console.log('=== DADOS PREPARADOS ===');
-      
+
       if (typeof window !== 'undefined' && typeof document !== 'undefined') {
         filesCreated.forEach(file => {
           const blob = new Blob([file.content], { type: 'text/csv;charset=utf-8;' });
@@ -258,7 +258,7 @@ export default function FerramentasScreen() {
           URL.revokeObjectURL(url);
           console.log(`📄 Arquivo baixado: ${file.name}`);
         });
-        
+
         Alert.alert(
           'Dados Exportados!',
           `✅ Dados foram exportados com sucesso!\n\n📄 Arquivos:\n${filesCreated.map(f => `• ${f.name}`).join('\n')}\n\n📊 Resumo:\n• ${stats.ativos} ativos\n• ${stats.proventos} proventos\n• ${stats.movimentacoes} movimentações\n\n💾 Os arquivos foram baixados!`,
@@ -269,7 +269,7 @@ export default function FerramentasScreen() {
           console.log(`\n📄 Arquivo: ${file.name}`);
           console.log(file.content);
         });
-        
+
         Alert.alert(
           'Dados Preparados!',
           `📄 Dados foram preparados!\n\n📱 Verifique o console para o conteúdo dos dados.\n\n📊 Resumo:\n• ${stats.ativos} ativos\n• ${stats.proventos} proventos\n• ${stats.movimentacoes} movimentações\n\n💡 Copie o conteúdo para criar os arquivos CSV.`,
@@ -299,23 +299,23 @@ export default function FerramentasScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={sharedStyles.container}>
-        <LinearGradient
-          colors={['#1DD1A1', '#55efc4']}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.headerGradient}
-        >
-          <View style={styles.headerContent}>
-            <Text style={styles.headerTitle}>Ferramentas</Text>
-            <Text style={styles.headerSubtitle}>Administre seu aplicativo e dados</Text>
-          </View>
-        </LinearGradient>
-
-        <ScrollView 
+        <ScrollView
           style={sharedStyles.scrollView}
           contentContainerStyle={sharedStyles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
+          <LinearGradient
+            colors={['#1DD1A1', '#55efc4']}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+            style={styles.headerGradient}
+          >
+            <View style={styles.headerContent}>
+              <Text style={styles.headerTitle}>Ferramentas</Text>
+              <Text style={styles.headerSubtitle}>Administre seu aplicativo e dados</Text>
+            </View>
+          </LinearGradient>
+
           {/* Seção de Tipos de Ativos */}
           <Card style={styles.cardMargin}>
             <Card.Title
@@ -323,9 +323,9 @@ export default function FerramentasScreen() {
               subtitle="Gerencie os tipos de investimentos"
               left={(props) => <Icon {...props} source="office-building" />}
               right={(props) => (
-                <IconButton 
-                  {...props} 
-                  icon="plus" 
+                <IconButton
+                  {...props}
+                  icon="plus"
                   onPress={() => handleOpenTipoModal()}
                 />
               )}
@@ -348,9 +348,9 @@ export default function FerramentasScreen() {
                   <View key={tipo.id} style={styles.tipoAtivoItem}>
                     <View style={styles.tipoAtivoContent}>
                       <View style={styles.tipoAtivoIcon}>
-                        <Icon 
-                          source={tipo.icon || 'help-circle'} 
-                          size={24} 
+                        <Icon
+                          source={tipo.icon || 'help-circle'}
+                          size={24}
                         />
                       </View>
                       <View style={styles.tipoAtivoInfo}>
@@ -439,8 +439,8 @@ export default function FerramentasScreen() {
 
         <Portal>
           {/* DIALOG 1: Exportar Dados */}
-          <Dialog 
-            visible={exportDataDialogVisible} 
+          <Dialog
+            visible={exportDataDialogVisible}
             onDismiss={() => setExportDataDialogVisible(false)}
             style={styles.customDialog}
           >
@@ -457,13 +457,13 @@ export default function FerramentasScreen() {
               </Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
-              <Button 
+              <Button
                 onPress={() => setExportDataDialogVisible(false)}
                 textColor="#64748B"
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onPress={handleExportData}
                 mode="contained"
                 buttonColor={primaryGreen}
@@ -475,8 +475,8 @@ export default function FerramentasScreen() {
           </Dialog>
 
           {/* DIALOG 2: Exportar Templates */}
-          <Dialog 
-            visible={exportTemplatesDialogVisible} 
+          <Dialog
+            visible={exportTemplatesDialogVisible}
             onDismiss={() => setExportTemplatesDialogVisible(false)}
             style={styles.customDialog}
           >
@@ -493,13 +493,13 @@ export default function FerramentasScreen() {
               </Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
-              <Button 
+              <Button
                 onPress={() => setExportTemplatesDialogVisible(false)}
                 textColor="#64748B"
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onPress={handleExportTemplates}
                 mode="contained"
                 buttonColor={secondaryGreen}
@@ -511,8 +511,8 @@ export default function FerramentasScreen() {
           </Dialog>
 
           {/* DIALOG 3: Importar Dados */}
-          <Dialog 
-            visible={importDataDialogVisible} 
+          <Dialog
+            visible={importDataDialogVisible}
             onDismiss={() => setImportDataDialogVisible(false)}
             style={styles.customDialog}
           >
@@ -529,13 +529,13 @@ export default function FerramentasScreen() {
               </Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
-              <Button 
+              <Button
                 onPress={() => setImportDataDialogVisible(false)}
                 textColor="#64748B"
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onPress={handleImportData}
                 mode="contained"
                 buttonColor={primaryGreen}
@@ -547,8 +547,8 @@ export default function FerramentasScreen() {
           </Dialog>
 
           {/* DIALOG 4: Limpar Dados */}
-          <Dialog 
-            visible={clearDataDialogVisible} 
+          <Dialog
+            visible={clearDataDialogVisible}
             onDismiss={() => setClearDataDialogVisible(false)}
             style={styles.customDialog}
           >
@@ -565,14 +565,14 @@ export default function FerramentasScreen() {
               </Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
-              <Button 
+              <Button
                 onPress={() => setClearDataDialogVisible(false)}
                 mode="contained"
                 buttonColor="#64748B"
               >
                 Cancelar
               </Button>
-              <Button 
+              <Button
                 onPress={handleClearData}
                 mode="contained"
                 buttonColor="#EF4444"
@@ -586,15 +586,15 @@ export default function FerramentasScreen() {
           </Dialog>
 
           {/* DIALOG 5: Resultado (Sucesso ou Erro) */}
-          <Dialog 
-            visible={resultDialogVisible} 
+          <Dialog
+            visible={resultDialogVisible}
             onDismiss={closeResultDialog}
             style={styles.customDialog}
           >
-            <Dialog.Icon 
-              icon={resultDialogData?.type === 'success' ? 'check-circle' : 'alert-circle'} 
-              size={50} 
-              color={resultDialogData?.type === 'success' ? primaryGreen : '#EF4444'} 
+            <Dialog.Icon
+              icon={resultDialogData?.type === 'success' ? 'check-circle' : 'alert-circle'}
+              size={50}
+              color={resultDialogData?.type === 'success' ? primaryGreen : '#EF4444'}
             />
             <Dialog.Title style={styles.dialogTitle}>
               {resultDialogData?.title}
@@ -605,7 +605,7 @@ export default function FerramentasScreen() {
               </Text>
             </Dialog.Content>
             <Dialog.Actions style={styles.dialogActions}>
-              <Button 
+              <Button
                 onPress={closeResultDialog}
                 mode="contained"
                 buttonColor={resultDialogData?.type === 'success' ? primaryGreen : '#EF4444'}

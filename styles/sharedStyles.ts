@@ -3,7 +3,7 @@ import { Platform, StyleSheet } from 'react-native';
 
 export const sharedStyles = StyleSheet.create({
   quickStatsContainer: {
-    backgroundColor: darkBackground,
+    backgroundColor: 'white',
     paddingHorizontal: 20,
     paddingVertical: 16,
   },
@@ -97,8 +97,8 @@ export const sharedStyles = StyleSheet.create({
   },
 
   headerSubtitle: {
-    fontSize: 16,
-    color: '#64748B',
+    fontSize: 18,
+    color: '#FFFFFF',
     textAlign: 'center',
   },
 
@@ -270,7 +270,7 @@ export const sharedStyles = StyleSheet.create({
   searchContainer: {
     paddingHorizontal: 20,
     paddingVertical: 16,
-    backgroundColor: darkBackground,
+    backgroundColor: 'white',
   },
 
   modernSearchbar: {

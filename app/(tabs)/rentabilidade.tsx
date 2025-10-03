@@ -4,25 +4,25 @@ import { buttonStyles, screenSpecificStyles, sharedStyles } from '@/styles/share
 import { PrecoAtualInput, RentabilidadeData } from '@/types/rentabilidade';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, StyleSheet, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
-    ActivityIndicator,
-    Button,
-    Icon,
-    IconButton,
-    Modal,
-    Portal,
-    Searchbar,
-    Text,
-    TextInput,
-    useTheme
+  ActivityIndicator,
+  Button,
+  Icon,
+  IconButton,
+  Modal,
+  Portal,
+  Searchbar,
+  Text,
+  TextInput,
+  useTheme
 } from 'react-native-paper';
 import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function RentabilidadeScreen() {
   const theme = useTheme();
-  
+
   const {
     rentabilidadeData,
     stats,
@@ -36,7 +36,7 @@ export default function RentabilidadeScreen() {
   const [editingAtivo, setEditingAtivo] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredData, setFilteredData] = useState<RentabilidadeData[]>([]);
-  
+
   const [formData, setFormData] = useState<Partial<PrecoAtualInput>>({
     ticker: '',
     precoAtual: undefined,
@@ -163,41 +163,40 @@ export default function RentabilidadeScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={sharedStyles.container}>
-        {/* Modern Header */}
-        <LinearGradient
-          colors={[primaryGreen, secondaryGreen]}
-          style={sharedStyles.modernHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Text style={[sharedStyles.headerTitle, { color: '#FFFFFF' }]}>
-            Rentabilidade
-          </Text>
-          <Text style={[sharedStyles.headerSubtitle, { color: '#FFFFFF90' }]}>
-            Acompanhe o desempenho dos seus investimentos
-          </Text>
-        </LinearGradient>
-
-        {/* Modern Search */}
-        <View style={sharedStyles.searchContainer}>
-          <Searchbar
-            placeholder="Buscar por ativo ou segmento..."
-            onChangeText={setSearchQuery}
-            value={searchQuery}
-            style={sharedStyles.modernSearchbar}
-            inputStyle={{ color: '#1E293B' }}
-            iconColor={'#64748B'}
-            placeholderTextColor={'#64748B'}
-          />
-        </View>
-
-        {/* Lista de ativos */}
         <ScrollView
           style={sharedStyles.scrollView}
-          refreshControl={
-            <RefreshControl refreshing={loading} onRefresh={refreshData} />
-          }
+          contentContainerStyle={sharedStyles.scrollContent}
+          showsVerticalScrollIndicator={false}
         >
+          {/* Modern Header */}
+          <LinearGradient
+            colors={[primaryGreen, secondaryGreen]}
+            style={sharedStyles.modernHeader}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={[sharedStyles.headerTitle, { color: '#FFFFFF' }]}>
+              Rentabilidade
+            </Text>
+            <Text style={[sharedStyles.headerSubtitle, { color: '#FFFFFF90' }]}>
+              Acompanhe o desempenho dos seus investimentos
+            </Text>
+          </LinearGradient>
+
+          {/* Modern Search */}
+          <View style={sharedStyles.searchContainer}>
+            <Searchbar
+              placeholder="Buscar por ativo ou segmento..."
+              onChangeText={setSearchQuery}
+              value={searchQuery}
+              style={sharedStyles.modernSearchbar}
+              inputStyle={{ color: '#1E293B' }}
+              iconColor={'#64748B'}
+              placeholderTextColor={'#64748B'}
+            />
+          </View>
+
+          {/* Lista de ativos */}
           {filteredData.map((item) => (
             <View key={item.ativo} style={sharedStyles.modernCard}>
               <View style={sharedStyles.cardHeader}>
@@ -278,7 +277,7 @@ export default function RentabilidadeScreen() {
                 <View style={styles.performanceRow}>
                   <View style={styles.performanceItem}>
                     <Text variant="bodySmall" style={sharedStyles.valueLabel}>L/P</Text>
-                    <Text variant="titleMedium" style={[sharedStyles.valueAmount, { 
+                    <Text variant="titleMedium" style={[sharedStyles.valueAmount, {
                       color: getLucroColor(item.lucroOuPrejuizo),
                       fontWeight: 'bold'
                     }]}>
@@ -287,7 +286,7 @@ export default function RentabilidadeScreen() {
                   </View>
                   <View style={styles.performanceItem}>
                     <Text variant="bodySmall" style={sharedStyles.valueLabel}>% L/P</Text>
-                    <Text variant="titleMedium" style={[sharedStyles.valueAmount, { 
+                    <Text variant="titleMedium" style={[sharedStyles.valueAmount, {
                       color: getLucroColor(item.percentualLucroOuPrejuizo),
                       fontWeight: 'bold'
                     }]}>
@@ -296,7 +295,7 @@ export default function RentabilidadeScreen() {
                   </View>
                   <View style={styles.performanceItem}>
                     <Text variant="bodySmall" style={sharedStyles.valueLabel}>Rent. c/ Prov.</Text>
-                    <Text variant="titleMedium" style={[sharedStyles.valueAmount, { 
+                    <Text variant="titleMedium" style={[sharedStyles.valueAmount, {
                       color: getLucroColor(item.rentabilidadeComProventos),
                       fontWeight: 'bold'
                     }]}>
@@ -319,7 +318,7 @@ export default function RentabilidadeScreen() {
                 {searchQuery ? 'Nenhum ativo encontrado' : 'Nenhum dado de rentabilidade'}
               </Text>
               <Text variant="bodyMedium" style={[sharedStyles.valueLabel, { textAlign: 'center', marginTop: 8, color: '#64748B' }]}>
-                {searchQuery 
+                {searchQuery
                   ? 'Tente ajustar sua busca'
                   : 'Cadastre ativos e movimentações para ver a rentabilidade'
                 }
@@ -338,7 +337,7 @@ export default function RentabilidadeScreen() {
             <Text variant="titleLarge" style={{ marginBottom: 16, color: primaryGreen }}>
               Atualizar Preço Atual
             </Text>
-            
+
             <View style={{ marginBottom: 16 }}>
               <TextInput
                 label="Ativo"
@@ -359,7 +358,7 @@ export default function RentabilidadeScreen() {
                   separator=","
                   precision={2}
                   minValue={0}
-                  style={[sharedStyles.currencyInput, { 
+                  style={[sharedStyles.currencyInput, {
                     borderColor: '#64748B',
                     backgroundColor: cardBackground,
                     color: '#1E293B'
@@ -369,16 +368,16 @@ export default function RentabilidadeScreen() {
             </View>
 
             <View style={sharedStyles.modalActions}>
-              <Button 
-                mode="outlined" 
+              <Button
+                mode="outlined"
                 onPress={handleCloseModal}
                 style={sharedStyles.modalButton}
                 textColor={'#1E293B'}
               >
                 Cancelar
               </Button>
-              <Button 
-                mode="contained" 
+              <Button
+                mode="contained"
                 onPress={handleSavePreco}
                 loading={updating}
                 disabled={updating || !formData.precoAtual}
@@ -461,44 +460,44 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: 'center',
   },
-  
+
   infoGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     marginBottom: 8,
   },
-  
+
   infoItem: {
     flex: 1,
     alignItems: 'center',
   },
-  
+
   allInfoGrid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     justifyContent: 'space-between',
     paddingVertical: 8,
   },
-  
+
   compactInfoItem: {
     width: '32%',
     alignItems: 'center',
     marginBottom: 4,
   },
-  
+
   singleRowGrid: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     paddingVertical: 8,
   },
-  
+
   singleRowItem: {
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: 2,
   },
-  
+
   fullTableRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -506,25 +505,25 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 4,
   },
-  
+
   tableItem: {
     flex: 1,
     alignItems: 'center',
     paddingHorizontal: 1,
     minWidth: 60,
   },
-  
+
   compactLabel: {
     opacity: 0.7,
     marginBottom: 2,
     textAlign: 'center',
     fontSize: 9,
   },
-  
+
   miniDivider: {
     marginVertical: 8,
   },
-  
+
   rentabilidadeContainer: {
     flexDirection: 'row',
     justifyContent: 'space-between',
@@ -533,7 +532,7 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     marginTop: 8,
   },
-  
+
   rentabilidadeItem: {
     flex: 1,
     alignItems: 'center',

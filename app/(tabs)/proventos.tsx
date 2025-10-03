@@ -5,7 +5,7 @@ import { sharedStyles } from '@/styles/sharedStyles';
 import { CreateProventoInput, Provento, TipoProvento } from '@/types/provento';
 import { LinearGradient } from 'expo-linear-gradient';
 import React, { useEffect, useState } from 'react';
-import { RefreshControl, ScrollView, View } from 'react-native';
+import { ScrollView, View } from 'react-native';
 import CurrencyInput from 'react-native-currency-input';
 import {
   ActivityIndicator,
@@ -27,7 +27,7 @@ import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 
 export default function ProventosScreen() {
   const theme = useTheme();
-  
+
   const {
     proventos,
     ativos,
@@ -294,107 +294,103 @@ export default function ProventosScreen() {
   return (
     <SafeAreaProvider>
       <SafeAreaView style={sharedStyles.container}>
-        {/* Modern Header */}
-        <LinearGradient
-          colors={[primaryGreen, secondaryGreen]}
-          style={sharedStyles.modernHeader}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-        >
-          <Text style={[sharedStyles.headerTitle, { color: '#FFFFFF' }]}>
-            Proventos
-          </Text>
-          <Text style={[sharedStyles.headerSubtitle, { color: '#FFFFFF90' }]}>
-            Gestão de dividendos e rendimentos
-          </Text>
-        </LinearGradient>
-
-        {/* Quick Stats Cards */}
-        <View style={sharedStyles.quickStatsContainer}>
-          <View style={styles.quickStatsRow}>
-            <View style={styles.quickStatCard}>
-              <Avatar.Icon 
-                size={40} 
-                icon="cash-multiple" 
-                style={{ backgroundColor: '#4CAF50' + '15' }}
-                color={'#4CAF50'}
-              />
-              <Text style={[styles.quickStatValue, { color: '#4CAF50' }]}>
-                {formatCurrency(stats.totalRecebido)}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
-                Total Recebido
-              </Text>
-            </View>
-
-            <View style={styles.quickStatCard}>
-              <Avatar.Icon 
-                size={40} 
-                icon="calendar-check" 
-                style={{ backgroundColor: primaryGreen + '15' }}
-                color={primaryGreen}
-              />
-              <Text style={[styles.quickStatValue, { color: primaryGreen }]}>
-                {formatCurrency(stats.proventosMes)}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
-                Este Mês
-              </Text>
-            </View>
-
-            <View style={styles.quickStatCard}>
-              <Avatar.Icon 
-                size={40} 
-                icon="chart-bar" 
-                style={{ backgroundColor: '#FFB946' + '15' }}
-                color={'#FFB946'}
-              />
-              <Text style={[styles.quickStatValue, { color: '#FFB946' }]}>
-                {formatCurrency(stats.proventosAno)}
-              </Text>
-              <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
-                Este Ano
-              </Text>
-            </View>
-          </View>
-        </View>
-
-        {/* Search Bar */}
-        <View style={sharedStyles.searchContainer}>
-          <View style={styles.searchWrapper}>
-            <Searchbar
-              placeholder="Buscar por ativo ou tipo..."
-              onChangeText={setSearchQuery}
-              value={searchQuery}
-              style={[sharedStyles.modernSearchbar, { flex: 1 }]}
-              inputStyle={{ color: '#1E293B' }}
-              iconColor={'#64748B'}
-              placeholderTextColor={'#64748B'}
-              elevation={0}
-            />
-            <IconButton
-              icon="filter-variant"
-              mode="contained-tonal"
-              size={24}
-              onPress={() => setFilterModalVisible(true)}
-              iconColor={primaryGreen}
-              containerColor={primaryGreen + '15'}
-              style={styles.filterIconButton}
-            />
-          </View>
-        </View>
-
-        {/* Proventos List */}
         <ScrollView
           style={sharedStyles.scrollView}
           contentContainerStyle={sharedStyles.scrollContent}
-          refreshControl={
-            <RefreshControl
-              refreshing={loading}
-              onRefresh={refreshData}
-            />
-          }
+          showsVerticalScrollIndicator={false}
         >
+          {/* Modern Header */}
+          <LinearGradient
+            colors={[primaryGreen, secondaryGreen]}
+            style={sharedStyles.modernHeader}
+            start={{ x: 0, y: 0 }}
+            end={{ x: 1, y: 1 }}
+          >
+            <Text style={[sharedStyles.headerTitle, { color: '#FFFFFF' }]}>
+              Proventos
+            </Text>
+            <Text style={[sharedStyles.headerSubtitle, { color: '#FFFFFF90' }]}>
+              Gestão de dividendos e rendimentos
+            </Text>
+          </LinearGradient>
+
+          {/* Quick Stats Cards */}
+          <View style={sharedStyles.quickStatsContainer}>
+            <View style={styles.quickStatsRow}>
+              <View style={styles.quickStatCard}>
+                <Avatar.Icon
+                  size={40}
+                  icon="cash-multiple"
+                  style={{ backgroundColor: '#4CAF50' + '15' }}
+                  color={'#4CAF50'}
+                />
+                <Text style={[styles.quickStatValue, { color: '#4CAF50' }]}>
+                  {formatCurrency(stats.totalRecebido)}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
+                  Total Recebido
+                </Text>
+              </View>
+
+              <View style={styles.quickStatCard}>
+                <Avatar.Icon
+                  size={40}
+                  icon="calendar-check"
+                  style={{ backgroundColor: primaryGreen + '15' }}
+                  color={primaryGreen}
+                />
+                <Text style={[styles.quickStatValue, { color: primaryGreen }]}>
+                  {formatCurrency(stats.proventosMes)}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
+                  Este Mês
+                </Text>
+              </View>
+
+              <View style={styles.quickStatCard}>
+                <Avatar.Icon
+                  size={40}
+                  icon="chart-bar"
+                  style={{ backgroundColor: '#FFB946' + '15' }}
+                  color={'#FFB946'}
+                />
+                <Text style={[styles.quickStatValue, { color: '#FFB946' }]}>
+                  {formatCurrency(stats.proventosAno)}
+                </Text>
+                <Text style={[styles.quickStatLabel, { color: '#64748B' }]}>
+                  Este Ano
+                </Text>
+              </View>
+            </View>
+          </View>
+
+          {/* Search Bar */}
+          <View style={sharedStyles.searchContainer}>
+            <View style={styles.searchWrapper}>
+              <Searchbar
+                placeholder="Buscar por ativo ou tipo..."
+                onChangeText={setSearchQuery}
+                value={searchQuery}
+                style={[sharedStyles.modernSearchbar, { flex: 1 }]}
+                inputStyle={{ color: '#1E293B' }}
+                iconColor={'#64748B'}
+                placeholderTextColor={'#64748B'}
+                elevation={0}
+              />
+              <IconButton
+                icon="filter-variant"
+                mode="contained-tonal"
+                size={24}
+                onPress={() => setFilterModalVisible(true)}
+                iconColor={primaryGreen}
+                containerColor={primaryGreen + '15'}
+                style={styles.filterIconButton}
+              />
+            </View>
+          </View>
+
+          {/* Proventos List */}
+
           {filteredProventos.map((provento) => (
             <View key={provento.id} style={sharedStyles.modernCard}>
               <View style={sharedStyles.cardHeader}>
@@ -443,7 +439,7 @@ export default function ProventosScreen() {
                     {formatCurrency(provento.valor)}
                   </Text>
                 </View>
-                
+
                 <View style={sharedStyles.valueContainer}>
                   <Text style={[sharedStyles.valueLabel, { color: '#64748B' }]}>
                     Data
@@ -480,9 +476,9 @@ export default function ProventosScreen() {
 
           {filteredProventos.length === 0 && (
             <View style={sharedStyles.emptyState}>
-              <Avatar.Icon 
-                size={48} 
-                icon="cash-multiple" 
+              <Avatar.Icon
+                size={48}
+                icon="cash-multiple"
                 style={{ backgroundColor: 'transparent' }}
                 color={'#64748B'}
               />
@@ -490,8 +486,8 @@ export default function ProventosScreen() {
                 {searchQuery ? 'Nenhum provento encontrado' : 'Nenhum provento cadastrado'}
               </Text>
               <Text style={[sharedStyles.emptySubtitle, { color: '#64748B', textAlign: 'center', marginTop: 8 }]}>
-                {searchQuery 
-                  ? 'Tente buscar por outro termo' 
+                {searchQuery
+                  ? 'Tente buscar por outro termo'
                   : 'Comece adicionando seus primeiros proventos'
                 }
               </Text>
@@ -524,15 +520,15 @@ export default function ProventosScreen() {
                 style={{ marginBottom: 16, color: primaryGreen }}
               >{editingId ? 'Editar Provento' : 'Novo Provento'}</Title>
 
-                <TextInput
-                  label="Código do Ativo *"
-                  value={formData.ativoTicker || ''}
-                  onChangeText={(text) => setFormData(prev => ({ ...prev, ativoTicker: text.toUpperCase() }))}
-                  style={styles.input}
-                  mode="flat"
-                  placeholder="Ex: BBAS3, PETR4, VALE3"
-                  autoCapitalize="characters"
-                />
+              <TextInput
+                label="Código do Ativo *"
+                value={formData.ativoTicker || ''}
+                onChangeText={(text) => setFormData(prev => ({ ...prev, ativoTicker: text.toUpperCase() }))}
+                style={styles.input}
+                mode="flat"
+                placeholder="Ex: BBAS3, PETR4, VALE3"
+                autoCapitalize="characters"
+              />
 
               <TextInput
                 label="Data"
@@ -631,7 +627,7 @@ export default function ProventosScreen() {
               <Text style={[styles.modalTitle, { color: '#1E293B' }]}>
                 Filtrar Proventos
               </Text>
-              
+
               <Text style={[styles.filterModalSubtitle, { color: '#64748B' }]}>
                 Selecione o tipo e período dos proventos
               </Text>
